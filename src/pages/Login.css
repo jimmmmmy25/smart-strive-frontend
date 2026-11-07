@@ -11,7 +11,6 @@
 }
 
 /* LEFT SIDE */
-
 .login-left {
   width: 55%;
   min-height: 100vh;
@@ -76,7 +75,6 @@
 }
 
 /* DECORATION */
-
 .login-left::before {
   content: "🍃";
   position: absolute;
@@ -96,7 +94,6 @@
 }
 
 /* RIGHT SIDE */
-
 .login-right {
   width: 45%;
   min-height: 100vh;
@@ -137,7 +134,6 @@
 }
 
 /* ROLE */
-
 .role-title {
   font-size: 13px;
   color: #526963;
@@ -191,7 +187,6 @@
 }
 
 /* FORM */
-
 .login-card form label {
   display: block;
   font-size: 12px;
@@ -258,7 +253,6 @@
 }
 
 /* GOOGLE */
-
 .login-divider {
   text-align: center;
   margin: 22px 0;
@@ -297,35 +291,52 @@
   cursor: pointer;
 }
 
-/* MOBILE */
-
+/* MOBILE RESPONSIVE BREAKPOINT */
 @media (max-width: 800px) {
   .login-page {
-    flex-direction: column;
+    flex-direction: column !important;
   }
 
   .login-left,
   .login-right {
-    width: 100%;
+    width: 100% !important;
   }
 
   .login-left {
-    min-height: 300px;
-    padding: 25px;
+    min-height: 220px !important;
+    padding: 20px 25px !important;
+  }
+
+  .back-button {
+    top: 20px !important;
+    right: 20px !important;
   }
 
   .login-message {
-    left: 25px;
-    bottom: 30px;
+    position: relative !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    margin-top: 20px;
   }
 
   .login-message h1 {
-    font-size: 30px;
+    font-size: 26px !important;
+    margin-bottom: 12px !important;
   }
 
   .login-right {
-    min-height: auto;
-    padding: 25px;
+    min-height: auto !important;
+    padding: 20px 16px !important;
+  }
+
+  .login-card {
+    padding: 24px 20px !important;
+    border-radius: 20px !important;
+  }
+
+  .role-options {
+    flex-direction: column;
+    gap: 8px;
   }
 }
 

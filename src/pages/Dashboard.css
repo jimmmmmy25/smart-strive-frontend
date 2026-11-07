@@ -1,0 +1,82 @@
+/* Dashboard Mobile Responsiveness Styles */
+.dashboard-root {
+  min-height: 100vh;
+  background: #F5F9F7;
+  color: #294D46;
+  font-family: "Segoe UI", Arial, sans-serif;
+  display: flex;
+  position: relative;
+}
+
+.dashboard-sidebar {
+  width: 230px;
+  flex-shrink: 0;
+  background: #123F35;
+  color: #FFFFFF;
+  padding: 25px 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.dashboard-main {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.student-dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin-top: 28px;
+}
+
+.wellness-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 16px;
+  margin-top: 28px;
+}
+
+/* RESPONSIVE BREAKPOINT FOR MOBILE / TABLET */
+@media (max-width: 900px) {
+  .dashboard-root {
+    flex-direction: column !important;
+  }
+  
+  .dashboard-sidebar {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 15px 20px !important;
+  }
+
+  .dashboard-sidebar nav {
+    display: flex !important;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 5px;
+    scrollbar-width: none;
+  }
+
+  .dashboard-sidebar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dashboard-sidebar nav button {
+    white-space: nowrap;
+    width: auto !important;
+    flex-shrink: 0;
+  }
+
+  .student-dashboard-summary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .wellness-row {
+    grid-template-columns: 1fr !important;
+  }
+}

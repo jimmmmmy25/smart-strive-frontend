@@ -209,7 +209,9 @@ background: "#ffffff",
 borderBottom: "1px solid #e1ebe8",
 display: "flex",
 alignItems: "center",
-justifyContent: "space-between"
+justifyContent: "space-between",
+flexWrap: "wrap",
+gap: 10
 },
 logo: {
 fontWeight: 800,
@@ -223,7 +225,8 @@ fontSize: 13
 container: {
 maxWidth: 1100,
 margin: "35px auto",
-padding: "0 22px 40px"
+padding: "0 16px 40px",
+boxSizing: "border-box"
 },
 eyebrow: {
 color: "#087c66",
@@ -233,7 +236,7 @@ letterSpacing: 1.5
 },
 title: {
 color: "#073f38",
-fontSize: 30,
+fontSize: "clamp(24px, 4vw, 30px)",
 margin: "8px 0"
 },
 subtitle: {
@@ -242,21 +245,21 @@ lineHeight: 1.6
 },
 summary: {
 background: "#ffffff",
-padding: 24,
+padding: 20,
 borderRadius: 16,
 border: "1px solid #e1ebe8",
 marginTop: 28
 },
 scoreGrid: {
 display: "grid",
-gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
 gap: 14,
 marginTop: 18
 },
 scoreCard: {
 background: "#f4f9f7",
 borderRadius: 12,
-padding: 18,
+padding: 16,
 display: "flex",
 flexDirection: "column",
 gap: 8
@@ -281,7 +284,7 @@ marginTop: 20
 },
 recommendationCard: {
 background: "#ffffff",
-padding: 22,
+padding: 20,
 borderRadius: 16,
 border: "1px solid #e1ebe8"
 },
@@ -306,7 +309,7 @@ fontSize: 14
 },
 supportCard: {
 background: "#e8f5f1",
-padding: 22,
+padding: 20,
 borderRadius: 14,
 marginTop: 25,
 lineHeight: 1.7
@@ -323,7 +326,8 @@ color: "#ffffff",
 border: "none",
 padding: "12px 20px",
 borderRadius: 8,
-cursor: "pointer"
+cursor: "pointer",
+fontWeight: "700"
 },
 backButton: {
 background: "#ffffff",
@@ -343,12 +347,11 @@ cursor: "pointer"
 },
 emptyCard: {
 background: "#ffffff",
-padding: 35,
+padding: 30,
 borderRadius: 16,
 textAlign: "center",
 marginTop: 30,
 border: "1px solid #e1ebe8"
 }
 };
-export default Recommendations;   
-             
+export default Recommendations;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
+import "./Dashboard.css";
 
 function Dashboard({ onNavigate, onLogout }) {
   const [mood, setMood] = useState("");
@@ -19,7 +20,6 @@ function Dashboard({ onNavigate, onLogout }) {
   const [latestAssessment, setLatestAssessment] = useState(null);
   const [isLoadingAssessment, setIsLoadingAssessment] = useState(true);
 
-  // FETCH USER PROFILE, MOODS, AND SUPABASE ASSESSMENT DATA SECURELY PER USER ID
   useEffect(() => {
     async function fetchUserData() {
       try {
@@ -29,7 +29,6 @@ function Dashboard({ onNavigate, onLogout }) {
           return;
         }
 
-        // 1. Fetch User Profile
         const { data: profileData } = await supabase
           .from("profiles")
           .select("first_name, last_name")
@@ -40,7 +39,6 @@ function Dashboard({ onNavigate, onLogout }) {
           setStudentName(profileData.first_name);
         }
 
-        // 2. Check DASS Baseline Status
         const { data: dassData } = await supabase
           .from("dass_assessments")
           .select("id")
@@ -51,17 +49,12 @@ function Dashboard({ onNavigate, onLogout }) {
           setShowBaselineModal(true);
         }
 
-        // 3. Fetch Latest Assessment from Supabase `dass_assessments` table for THIS user
         const { data: assessmentData, error: assessmentError } = await supabase
           .from("dass_assessments")
           .select("total_score, baseline_7_score, responses, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(1);
-
-        if (assessmentError) {
-          console.error("❌ Error fetching assessments:", assessmentError.message);
-        }
 
         if (!assessmentError && assessmentData && assessmentData.length > 0) {
           const record = assessmentData[0];
@@ -82,7 +75,6 @@ function Dashboard({ onNavigate, onLogout }) {
           setLatestAssessment(null);
         }
 
-        // 4. Fetch Mood Logs for THIS user
         const { data: moodData } = await supabase
           .from("mood_logs")
           .select("mood, note, created_at")
@@ -107,7 +99,6 @@ function Dashboard({ onNavigate, onLogout }) {
 
     fetchUserData();
 
-    // Listen for auth changes / window focus token refreshes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         fetchUserData();
@@ -247,7 +238,7 @@ function Dashboard({ onNavigate, onLogout }) {
   const weeklyCheckIns = weeklyMoodData.filter((item) => item.hasEntry).length;
 
   return (
-    <div style={{ minHeight: "100vh", background: colors.background, color: colors.text, fontFamily: '"Segoe UI", Arial, sans-serif', display: "flex", position: "relative" }}>
+    <div className="dashboard-root">
       {showBaselineModal && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(18, 63, 53, 0.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }}>
           <div style={{ background: colors.white, borderRadius: "24px", maxWidth: "500px", width: "100%", padding: "32px", boxShadow: "0 20px 40px rgba(0,0,0,0.15)", textAlign: "center", border: `1px solid ${colors.border}` }}>
@@ -265,7 +256,7 @@ function Dashboard({ onNavigate, onLogout }) {
       )}
 
       {/* SIDEBAR */}
-      <aside style={{ width: "230px", flexShrink: 0, background: colors.dark, color: "#FFFFFF", padding: "25px 14px", display: "flex", flexDirection: "column", minHeight: "100vh", boxSizing: "border-box" }}>
+      <aside className="dashboard-sidebar">
         <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 10px 28px" }}>
           <div style={{ fontSize: "28px" }}>🌿</div>
           <div>
@@ -292,7 +283,7 @@ function Dashboard({ onNavigate, onLogout }) {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main style={{ flex: 1, minWidth: 0, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+      <main className="dashboard-main">
         <header style={{ minHeight: "70px", background: colors.white, borderBottom: `1px solid ${colors.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 30px", gap: "15px", boxSizing: "border-box" }}>
           <div style={{ fontSize: "11px", color: colors.muted }}>Student Portal / Home</div>
           <div style={{ display: "flex", alignItems: "center", gap: "11px" }}>
@@ -316,7 +307,7 @@ function Dashboard({ onNavigate, onLogout }) {
           </section>
 
           {/* SUMMARY CARDS */}
-          <div className="student-dashboard-summary" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "15px", marginTop: "28px" }}>
+          <div className="student-dashboard-summary">
             {[
               { icon: "📝", label: "Assessment", title: "Comprehensive Check", description: "Complete your 13-feature assessment.", button: "Start Assessment", action: () => goTo("assessment"), color: colors.green, background: colors.greenLight },
               { icon: "📈", label: "My Progress", title: "Your journey matters", description: "Review your assessment history and progress.", button: "View Progress", action: () => goTo("progress"), color: "#4267A1", background: "#EDF3FF" },
@@ -333,7 +324,7 @@ function Dashboard({ onNavigate, onLogout }) {
           </div>
 
           {/* WELLNESS ROW */}
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 0.85fr)", gap: "16px", marginTop: "28px" }}>
+          <div className="wellness-row">
             {/* MOOD CHECK-IN SECTION */}
             <section style={cardStyle}>
               <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>

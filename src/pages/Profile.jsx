@@ -6,11 +6,8 @@ const saved = localStorage.getItem("smartStriveStudentProfile");
 if (saved) {
   try {
     return JSON.parse(saved);
-  } catch {
-    // Use default profile if saved data is invalid.
-  }
+  } catch {}
 }
-
 return {
   fullName: "",
   studentNumber: "",
@@ -42,7 +39,6 @@ localStorage.setItem(
   "smartStriveStudentProfile",
   JSON.stringify(draft)
 );
-
 setIsEditing(false);
 setMessage("Your profile has been updated successfully!");
 };
@@ -123,6 +119,7 @@ return (
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   disabled={!isEditing}
+                  style={styles.inputField}
                 />
               </div>
             ))}
@@ -183,14 +180,17 @@ background: "#fff",
 borderBottom: "1px solid #e1ebe8",
 display: "flex",
 alignItems: "center",
-justifyContent: "space-between"
+justifyContent: "space-between",
+flexWrap: "wrap",
+gap: 10
 },
 logo: { fontWeight: 800, letterSpacing: 1, color: "#073f38" },
 headerText: { color: "#7b8b86", fontSize: 13 },
 container: {
 maxWidth: 1000,
 margin: "35px auto",
-padding: "0 22px 40px"
+padding: "0 16px 40px",
+boxSizing: "border-box"
 },
 eyebrow: {
 color: "#087c66",
@@ -198,31 +198,31 @@ fontSize: 12,
 fontWeight: 800,
 letterSpacing: 1.5
 },
-title: { color: "#073f38", fontSize: 30, margin: "8px 0" },
+title: { color: "#073f38", fontSize: "clamp(24px, 4vw, 30px)", margin: "8px 0" },
 subtitle: { color: "#7b8b86", lineHeight: 1.6 },
 profileCard: {
 background: "#fff",
 border: "1px solid #e1ebe8",
 borderRadius: 16,
-padding: 25,
+padding: 22,
 marginTop: 28
 },
-profileTop: { display: "flex", alignItems: "center", gap: 18 },
+profileTop: { display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" },
 avatar: {
-width: 75,
-height: 75,
+width: 65,
+height: 65,
 borderRadius: "50%",
 background: "#e8f5f1",
 color: "#087c66",
 display: "flex",
 alignItems: "center",
 justifyContent: "center",
-fontSize: 25,
+fontSize: 22,
 fontWeight: 800,
 flexShrink: 0
 },
-name: { margin: "0 0 5px", color: "#073f38" },
-email: { margin: "0 0 10px", color: "#7b8b86", fontSize: 14 },
+name: { margin: "0 0 5px", color: "#073f38", fontSize: "18px" },
+email: { margin: "0 0 10px", color: "#7b8b86", fontSize: 13, wordBreak: "break-all" },
 studentBadge: {
 background: "#e8f5f1",
 color: "#087c66",
@@ -235,7 +235,7 @@ detailsCard: {
 background: "#fff",
 border: "1px solid #e1ebe8",
 borderRadius: 16,
-padding: 25,
+padding: "20px 16px",
 marginTop: 20
 },
 sectionHeading: {
@@ -246,12 +246,20 @@ flexWrap: "wrap",
 gap: 12,
 marginBottom: 22
 },
-sectionTitle: { margin: 0, color: "#073f38" },
+sectionTitle: { margin: 0, color: "#073f38", fontSize: "18px" },
 field: { display: "flex", flexDirection: "column", gap: 8 },
+inputField: {
+width: "100%",
+padding: "12px",
+borderRadius: "10px",
+border: "1px solid #d5e3dd",
+fontSize: "14px",
+boxSizing: "border-box"
+},
 formGrid: {
 display: "grid",
-gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-gap: 20
+gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+gap: 16
 },
 formActions: {
 display: "flex",
@@ -263,7 +271,7 @@ editButton: {
 background: "#e8f5f1",
 color: "#087c66",
 border: "none",
-padding: "11px 16px",
+padding: "10px 14px",
 borderRadius: 8,
 cursor: "pointer",
 fontWeight: 700
@@ -274,7 +282,8 @@ color: "#fff",
 border: "none",
 padding: "12px 20px",
 borderRadius: 8,
-cursor: "pointer"
+cursor: "pointer",
+fontWeight: "700"
 },
 cancelButton: {
 background: "#fff",
@@ -294,11 +303,11 @@ fontSize: 14
 },
 infoCard: {
 background: "#e8f5f1",
-padding: 20,
+padding: 18,
 borderRadius: 14,
 marginTop: 20,
 lineHeight: 1.7,
-fontSize: 14
+fontSize: 13
 },
 actions: {
 display: "flex",
@@ -323,4 +332,4 @@ borderRadius: 8,
 cursor: "pointer"
 }
 };
-export default Profile; 
+export default Profile;

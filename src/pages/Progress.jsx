@@ -172,17 +172,19 @@ background: "#fff",
 borderBottom: "1px solid #e1ebe8",
 display: "flex",
 alignItems: "center",
-justifyContent: "space-between"
+justifyContent: "space-between",
+flexWrap: "wrap",
+gap: 10
 },
 logo: { fontWeight: 800, letterSpacing: 1, color: "#073f38" },
 headerText: { color: "#7b8b86", fontSize: 13 },
-container: { maxWidth: 1100, margin: "35px auto", padding: "0 22px 40px" },
+container: { maxWidth: 1100, margin: "35px auto", padding: "0 16px 40px", boxSizing: "border-box" },
 eyebrow: { color: "#087c66", fontSize: 12, fontWeight: 800, letterSpacing: 1.5 },
-title: { color: "#073f38", fontSize: 30, margin: "8px 0" },
+title: { color: "#073f38", fontSize: "clamp(24px, 4vw, 30px)", margin: "8px 0" },
 subtitle: { color: "#7b8b86", lineHeight: 1.6 },
 latestCard: {
 background: "#fff",
-padding: 24,
+padding: 20,
 borderRadius: 16,
 border: "1px solid #e1ebe8",
 marginTop: 28
@@ -190,23 +192,23 @@ marginTop: 28
 dateText: { color: "#7b8b86", fontSize: 13 },
 scoreGrid: {
 display: "grid",
-gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
 gap: 14,
 marginTop: 20
 },
 scoreCard: {
 background: "#f4f9f7",
-padding: 18,
+padding: 16,
 borderRadius: 12,
 display: "flex",
 flexDirection: "column",
 gap: 9
 },
 category: { color: "#7b8b86", fontSize: 14 },
-score: { fontSize: 28, color: "#073f38" },
+score: { fontSize: 24, color: "#073f38" },
 historySection: {
 background: "#fff",
-padding: 24,
+padding: "20px 16px",
 borderRadius: 16,
 border: "1px solid #e1ebe8",
 marginTop: 25
@@ -226,12 +228,12 @@ borderRadius: 20,
 fontSize: 12,
 fontWeight: 700
 },
-tableWrapper: { overflowX: "auto", marginTop: 18 },
-table: { width: "100%", borderCollapse: "collapse", textAlign: "left" },
+tableWrapper: { overflowX: "auto", marginTop: 18, width: "100%" },
+table: { width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "450px" },
 tableSeverity: { display: "block", fontSize: 12, marginTop: 5, fontWeight: 700 },
 note: {
 background: "#e8f5f1",
-padding: 18,
+padding: 16,
 borderRadius: 12,
 marginTop: 22,
 lineHeight: 1.7,
@@ -239,7 +241,7 @@ fontSize: 13
 },
 emptyCard: {
 background: "#fff",
-padding: 35,
+padding: 30,
 borderRadius: 16,
 textAlign: "center",
 marginTop: 30,
@@ -251,7 +253,8 @@ color: "#fff",
 border: "none",
 padding: "12px 20px",
 borderRadius: 8,
-cursor: "pointer"
+cursor: "pointer",
+fontWeight: "700"
 },
 clearButton: {
 background: "#fff",

@@ -69,7 +69,6 @@ export default function DassAssessment({ onBack, onComplete }) {
     const rawDass7Score = dass7Indices.reduce((sum, idx) => sum + (Number(answers[idx]) || 0), 0);
 
     return {
-      // Doubled for standard DASS-42 scale compatibility (0-42)
       subscales: {
         Depression: rawScores.Depression * 2,
         Anxiety: rawScores.Anxiety * 2,
@@ -98,7 +97,6 @@ export default function DassAssessment({ onBack, onComplete }) {
         throw new Error("User authentication required to submit baseline assessment.");
       }
 
-      // Save to dass_assessments table
       const { error: dbError } = await supabase.from("dass_assessments").insert([
         {
           user_id: user.id,
@@ -106,7 +104,7 @@ export default function DassAssessment({ onBack, onComplete }) {
           total_score: calculated.rawTotal,
           baseline_7_score: calculated.baseline7Score,
           responses: {
-            answers: answers.map(Number), // Store as clean integer array
+            answers: answers.map(Number),
             subscales: calculated.subscales,
           },
         },
@@ -118,7 +116,6 @@ export default function DassAssessment({ onBack, onComplete }) {
       sessionStorage.removeItem("smartStriveDassStep");
 
       if (typeof onComplete === "function") {
-        // Pass subscales object cleanly matching Result.jsx format: { Depression, Anxiety, Stress }
         onComplete(calculated.subscales);
       }
     } catch (err) {
@@ -200,7 +197,7 @@ export default function DassAssessment({ onBack, onComplete }) {
                   className={`dass-assessment-option ${isSelected ? "selected" : ""}`}
                 >
                   <span className="option-bullet">{isSelected ? "●" : "○"}</span>
-                  <div className="option-text-group" style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
+                  <div className="option-text-group" style={{ display: "flex", flexDirection: "column", textAlign: "left", width: "100%" }}>
                     <span style={{ fontWeight: "600" }}>{choice}</span>
                     <span style={{ fontSize: "11px", color: "#7B8B86", marginTop: "3px" }}>{choiceHints[index]}</span>
                   </div>

@@ -101,13 +101,11 @@ function ResultCard({ category, value }) {
 export default function Result({ score, onBack, onRecommendations }) {
   const categoryNames = ["Depression", "Anxiety", "Stress"];
 
-  // 1. Check if the payload comes from the 13-Feature Lifestyle ML Model
   const isMlResult =
     score !== null &&
     typeof score === "object" &&
     ("stress_level" in score || "stress_score" in score);
 
-  // 2. Check if the payload comes from the DASS-21 Baseline Assessment
   const validDassScores =
     score !== null &&
     typeof score === "object" &&
@@ -118,7 +116,6 @@ export default function Result({ score, onBack, onRecommendations }) {
         score[category] <= 42
     );
 
-  // Render 13-Feature ML Prediction Result View
   if (isMlResult) {
     const levelColor = {
       Low: "#087c66",
@@ -148,7 +145,7 @@ export default function Result({ score, onBack, onRecommendations }) {
           </section>
 
           <section style={styles.card}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
               <div>
                 <h2 style={styles.categoryTitle}>Predicted Stress Level</h2>
                 <span
@@ -199,7 +196,6 @@ export default function Result({ score, onBack, onRecommendations }) {
     );
   }
 
-  // Render DASS-21 Results View or Error Card
   return (
     <div style={styles.page}>
       <header style={styles.header}>
@@ -222,7 +218,7 @@ export default function Result({ score, onBack, onRecommendations }) {
           <section style={styles.errorCard}>
             <h2>Three assessment scores were not received.</h2>
             <p>
-              The Result page expects a score object containing Depression, Anxiety, and Stress. The current data may still be coming from the old assessment flow.
+              The Result page expects a score object containing Depression, Anxiety, and Stress.
             </p>
             <button style={styles.primaryButton} onClick={onBack}>
               Back to Dashboard
@@ -242,7 +238,7 @@ export default function Result({ score, onBack, onRecommendations }) {
             <section style={styles.notice}>
               <strong>Important reminder</strong>
               <p>
-                DASS-21 is a screening instrument, not a diagnostic assessment. These results should not be used to diagnose depression, anxiety, or stress-related disorders. Students who need support may contact the university Guidance Office or a qualified professional.
+                DASS-21 is a screening instrument, not a diagnostic assessment. Students who need support may contact the university Guidance Office or a qualified professional.
               </p>
             </section>
 
@@ -294,6 +290,7 @@ const styles = {
   container: {
     width: "min(1050px, calc(100% - 32px))",
     margin: "35px auto",
+    boxSizing: "border-box",
   },
   intro: {
     marginBottom: 28,
@@ -313,7 +310,7 @@ const styles = {
     background: "#fff",
     border: "1px solid #e1ebe8",
     borderRadius: 17,
-    padding: 24,
+    padding: 20,
     boxShadow: "0 8px 24px rgba(28,76,59,.04)",
   },
   categoryIcon: {
@@ -325,11 +322,11 @@ const styles = {
     fontSize: 25,
   },
   categoryTitle: {
-    fontSize: 20,
+    fontSize: 18,
     margin: "16px 0 8px",
   },
   score: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: 800,
     margin: "12px 0",
   },
@@ -358,7 +355,7 @@ const styles = {
   },
   notice: {
     marginTop: 22,
-    padding: 18,
+    padding: 16,
     background: "#e8f5f1",
     borderRadius: 12,
     fontSize: 13,

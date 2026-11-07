@@ -129,13 +129,14 @@
   align-items: center;
   gap: 12px;
   text-align: left;
-  padding: 12px 16px;
+  padding: 14px 16px;
   border: 1px solid #e1ebe8;
   background: #ffffff;
   border-radius: 11px;
   cursor: pointer;
   color: #35564c;
   transition: all 0.2s ease;
+  min-height: 52px;
 }
 
 .assessment-option:hover:not(:disabled) {
@@ -159,6 +160,7 @@
   justify-content: space-between;
   width: 100%;
   align-items: center;
+  gap: 10px;
 }
 
 .option-value {
@@ -169,6 +171,7 @@
 .option-hint {
   font-size: 12px;
   color: #7b8b86;
+  text-align: right;
 }
 
 .assessment-actions {
@@ -224,4 +227,27 @@
   font-size: 13px;
   margin-top: 14px;
   font-weight: 500;
+}
+
+/* MOBILE RESPONSIVE QUERIES */
+@media (max-width: 600px) {
+  .assessment-container {
+    width: 100% !important;
+    margin: 15px auto !important;
+    padding: 0 12px;
+  }
+  
+  .assessment-question {
+    font-size: 18px !important;
+  }
+
+  .option-text-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .option-hint {
+    text-align: left;
+  }
 }

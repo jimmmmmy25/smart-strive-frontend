@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 import "./Assessment.css";
 
-const API = "http://127.0.0.1:8000"; 
-
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const featureQuestions = [
-  // --- HIGHER = MORE OF THE PROBLEM (0 - 5 scale) ---
   {
     id: "study_load",
     category: "Problem",
@@ -48,8 +46,6 @@ const featureQuestions = [
     en: "How noisy is the place where you usually study or rest?",
     tl: "Gaano kaingay ang lugar kung saan ka karaniwang nag-aaral o nagpapahinga?",
   },
-
-  // --- HIGHER = BETTER (0 - 5 scale) ---
   {
     id: "sleep_quality",
     category: "Better",
@@ -92,8 +88,6 @@ const featureQuestions = [
     en: "How safe do you feel in your daily surroundings?",
     tl: "Gaano ka ligtas sa iyong araw-araw na kapaligiran?",
   },
-
-  // --- SOCIAL SUPPORT (0 - 3 scale) ---
   {
     id: "social_support",
     category: "Support",
@@ -153,7 +147,6 @@ export default function Assessment({ onBack, onComplete }) {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error("Please log in again.");
 
-      // Fetch the latest official DASS-21 baseline record to extract the 7 DASS stress items using indices [0, 5, 7, 10, 11, 13, 17]
       const { data: latestDass } = await supabase
         .from("dass_assessments")
         .select("responses")
@@ -184,7 +177,7 @@ export default function Assessment({ onBack, onComplete }) {
 
       const { error: dbError } = await supabase.from("assessments").insert([{
         user_id: user.id,
-        stress_level: dbStressLevel, // Inserts "low", "moderate", or "high"
+        stress_level: dbStressLevel,
         confidence: r.confidence,
         stress_score: r.stress_score,
         probabilities: r.probabilities,
@@ -349,7 +342,7 @@ export default function Assessment({ onBack, onComplete }) {
               <div className="assessment-fill" style={{ width: `${progress}%` }} />
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", flexWrap: "wrap", gap: "8px" }}>
               <p className="assessment-number" style={{ margin: 0 }}>
                 FEATURE: {currentItem.id.toUpperCase()}
               </p>
