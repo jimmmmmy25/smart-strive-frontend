@@ -1,0 +1,251 @@
+* {
+  box-sizing: border-box;
+}
+
+/* CENTERED CONTAINER WITH GRADIENT BACKGROUND */
+.register-page-centered {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  background: radial-gradient(circle at 50% 20%, #ffffff 0%, #edf7f3 45%, #d8eee5 100%);
+  font-family: Arial, sans-serif;
+  color: #123b35;
+  position: relative;
+  overflow: hidden;
+}
+
+/* LOW VISIBILITY BACKGROUND LOGO WATERMARK */
+.bg-watermark-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 320px;
+  opacity: 0.04;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* CENTERED CARD */
+.register-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 35px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(18, 59, 53, 0.08);
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+.register-header {
+  text-align: center;
+  margin-bottom: 24px;
+  position: relative;
+  padding-top: 28px;
+}
+
+.back-link {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: none;
+  background: transparent;
+  color: #45665f;
+  cursor: pointer;
+  font-size: 13px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #138b70;
+}
+
+.register-header h1 {
+  margin: 0;
+  color: #123f38;
+  font-size: 26px;
+}
+
+.step-indicator {
+  color: #6b817b;
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* FORMS & INPUTS */
+.register-card label {
+  display: block;
+  font-size: 12px;
+  color: #4b635d;
+  margin: 12px 0 5px;
+  font-weight: 600;
+}
+
+.register-card input[type="text"],
+.register-card input[type="email"],
+.register-card input[type="password"],
+.register-card input[type="date"],
+.register-card select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #dce7e3;
+  border-radius: 10px;
+  outline: none;
+  font-size: 13px;
+  color: #123b35;
+  background: #ffffff;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.register-card input:focus,
+.register-card select:focus {
+  border-color: #138b70;
+  box-shadow: 0 0 0 3px rgba(19, 139, 112, 0.1);
+}
+
+.input-row {
+  display: flex;
+  gap: 12px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* CONSENT BOX & SPACING FIX */
+.consent-box {
+  background: #f4fbf8;
+  border: 1px solid #d2e9e1;
+  padding: 14px 16px;
+  border-radius: 14px;
+  margin-top: 18px;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 14px !important;
+  cursor: pointer;
+  margin: 0 !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  margin: 2px 0 0 0 !important;
+  accent-color: #138b70;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.consent-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #37534c;
+}
+
+/* BUTTONS & FOOTER */
+.login-submit {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 11px;
+  background: #138b70;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.login-submit:hover {
+  background: #0d765f;
+}
+
+.login-submit:disabled {
+  background: #b5dcd2;
+  cursor: not-allowed;
+}
+
+.signup-text {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #7c8b87;
+}
+
+.signup-text button {
+  border: none;
+  background: none;
+  color: #138b70;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* PASSWORD INDICATOR */
+.password-indicator-container {
+  background: #f4f9f7;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e1ebe6;
+  margin-top: 8px;
+}
+
+.password-indicator-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.valid { color: #138b70; font-weight: 600; }
+.invalid { color: #94a3b8; }
+.password-match-warning { color: #dc2626; font-size: 11px; display: block; margin-top: 4px; }
+
+@media (max-width: 650px) {
+  .input-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+/* RED BORDER ON DUPLICATE INPUT */
+.register-card input.input-error {
+  border-color: #dc2626 !important;
+  background-color: #fff5f5;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+/* ERROR & STATUS TEXT BELOW EMAIL INPUT */
+.email-error-warning {
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  display: block;
+  margin-top: 4px;
+}
+
+.email-status-checking {
+  color: #6b817b;
+  font-size: 11px;
+  display: block;
+  margin-top: 4px;
+}
