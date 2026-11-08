@@ -1,357 +1,271 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "../services/supabaseClient";
+import "./Recommendations.css";
+
 const recommendationData = {
-Depression: {
-activities: [
-"Practice mood journaling. Write down your thoughts and feelings.",
-"Try doing activities you enjoy, even for a short time.",
-"Maintain a regular sleep and daily routine.",
-"Reach out to a trusted friend, family member, or guidance counselor."
-],
-icon: "💚"
-},
-Anxiety: {
-activities: [
-"Practice deep breathing for 3–5 minutes.",
-"Try the 5-4-3-2-1 grounding technique.",
-"Break overwhelming tasks into smaller steps.",
-"Take short breaks when you feel mentally overwhelmed."
-],
-icon: "🌿"
-},
-Stress: {
-activities: [
-"Create a realistic daily study schedule.",
-"Prioritize urgent academic tasks and deadlines.",
-"Take short breaks between study sessions.",
-"Try stretching, walking, or other relaxing activities."
-],
-icon: "🌱"
-}
+  Depression: {
+    activities: [
+      "Practice mood journaling. Write down your thoughts and feelings.",
+      "Try doing activities you enjoy, even for a short time.",
+      "Maintain a regular sleep and daily routine.",
+      "Reach out to a trusted friend, family member, or guidance counselor."
+    ],
+    icon: "💚"
+  },
+  Anxiety: {
+    activities: [
+      "Practice deep breathing for 3–5 minutes.",
+      "Try the 5-4-3-2-1 grounding technique.",
+      "Break overwhelming tasks into smaller steps.",
+      "Take short breaks when you feel mentally overwhelmed."
+    ],
+    icon: "🌿"
+  },
+  Stress: {
+    activities: [
+      "Create a realistic daily study schedule.",
+      "Prioritize urgent academic tasks and deadlines.",
+      "Take short breaks between study sessions.",
+      "Try stretching, walking, or other relaxing activities."
+    ],
+    icon: "🌱"
+  }
 };
+
 const getSeverity = (category, score) => {
-const ranges = {
-Depression: [
-[9, "Normal"],
-[13, "Mild"],
-[20, "Moderate"],
-[27, "Severe"],
-[42, "Extremely Severe"]
-],
-Anxiety: [
-[7, "Normal"],
-[9, "Mild"],
-[14, "Moderate"],
-[19, "Severe"],
-[42, "Extremely Severe"]
-],
-Stress: [
-[14, "Normal"],
-[18, "Mild"],
-[25, "Moderate"],
-[33, "Severe"],
-[42, "Extremely Severe"]
-]
+  const ranges = {
+    Depression: [
+      [9, "Normal"],
+      [13, "Mild"],
+      [20, "Moderate"],
+      [27, "Severe"],
+      [42, "Extremely Severe"]
+    ],
+    Anxiety: [
+      [7, "Normal"],
+      [9, "Mild"],
+      [14, "Moderate"],
+      [19, "Severe"],
+      [42, "Extremely Severe"]
+    ],
+    Stress: [
+      [14, "Normal"],
+      [18, "Mild"],
+      [25, "Moderate"],
+      [33, "Severe"],
+      [42, "Extremely Severe"]
+    ]
+  };
+  return ranges[category]?.find(([max]) => score <= max)?.[1] || "Normal";
 };
-return ranges[category].find(([max]) => score <= max)?.[1] || "Normal";
-};
-function Recommendations({ score, onBack, onLogout }) {
-const hasScores =
-score &&
-["Depression", "Anxiety", "Stress"].every(
-category =>
-Number.isFinite(Number(score[category])) &&
-Number(score[category]) >= 0 &&
-Number(score[category]) <= 42
-);
-const categories = hasScores
-? ["Depression", "Anxiety", "Stress"].map(category => ({
-name: category,
-score: Number(score[category]),
-severity: getSeverity(category, Number(score[category]))
-}))
-: [];
-const severityColor = severity => {
-if (severity === "Normal") return "#087c66";
-if (severity === "Mild") return "#65a30d";
-if (severity === "Moderate") return "#d97706";
-return "#dc2626";
-};
-return (
-  <div style={styles.page}>
-    <header style={styles.header}>
-      <div style={styles.logo}>🌿 SMART STRIVE</div>
-      <div style={styles.headerText}>Personalized Support</div>
-    </header>
-<main style={styles.container}>
-    <p style={styles.eyebrow}>YOUR WELL-BEING MATTERS</p>
-    <h1 style={styles.title}>Coping Recommendations</h1>
-    <p style={styles.subtitle}>
-      Explore helpful activities and strategies based on your
-      DASS-21 assessment results.
-    </p>
 
-    {!hasScores ? (
-      <section style={styles.emptyCard}>
-        <div style={{ fontSize: 38 }}>🌱</div>
-        <h2>No assessment results yet</h2>
-        <p>
-          Complete your DASS-21 assessment to receive
-          personalized coping recommendations.
+export default function Recommendations({ score: initialScore, onBack }) {
+  const [dassScores, setDassScores] = useState(initialScore || null);
+  const [mlAssessment, setMlAssessment] = useState(null);
+  const [loading, setLoading] = useState(!initialScore);
+
+  useEffect(() => {
+    async function fetchUserAssessmentData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        if (!initialScore) {
+          const { data: dassData } = await supabase
+            .from("dass_assessments")
+            .select("responses")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (dassData && dassData.length > 0 && dassData[0].responses?.subscales) {
+            setDassScores(dassData[0].responses.subscales);
+          }
+        }
+
+        const { data: featureData } = await supabase
+          .from("assessments")
+          .select("recommendations, top_concerns, stress_level, stress_score")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (featureData && featureData.length > 0) {
+          setMlAssessment(featureData[0]);
+        }
+      } catch (err) {
+        console.error("Error fetching recommendation data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUserAssessmentData();
+  }, [initialScore]);
+
+  const hasDassScores =
+    dassScores &&
+    ["Depression", "Anxiety", "Stress"].every(
+      (category) =>
+        Number.isFinite(Number(dassScores[category])) &&
+        Number(dassScores[category]) >= 0 &&
+        Number(dassScores[category]) <= 42
+    );
+
+  const categories = hasDassScores
+    ? ["Depression", "Anxiety", "Stress"].map((category) => ({
+        name: category,
+        score: Number(dassScores[category]),
+        severity: getSeverity(category, Number(dassScores[category]))
+      }))
+    : [];
+
+  const getSeverityClass = (severity) => {
+    if (severity === "Normal" || severity === "Low") return "severity-normal";
+    if (severity === "Mild") return "severity-mild";
+    if (severity === "Moderate") return "severity-moderate";
+    return "severity-severe";
+  };
+
+  const hasAnyResults = hasDassScores || (mlAssessment && mlAssessment.recommendations?.length > 0);
+
+  return (
+    <div className="rec-page">
+      <header className="rec-header">
+        <div className="rec-logo">🌿 SMART STRIVE</div>
+        <div className="rec-header-text">Personalized Support</div>
+      </header>
+
+      <main className="rec-container">
+        <p className="rec-eyebrow">YOUR WELL-BEING MATTERS</p>
+        <h1 className="rec-title">Coping Recommendations</h1>
+        <p className="rec-subtitle">
+          Explore helpful activities and strategies based on your assessment results.
         </p>
-        <button style={styles.primaryButton} onClick={onBack}>
-          Back to Dashboard
-        </button>
-      </section>
-    ) : (
-      <>
-        <section style={styles.summary}>
-          <h2>Your Assessment Summary</h2>
-          <p>These are your latest recorded screening scores.</p>
-          <div style={styles.scoreGrid}>
-            {categories.map(item => (
-              <div style={styles.scoreCard} key={item.name}>
-                <span>{item.name}</span>
-                <strong>{item.score}/42</strong>
-                <span
-                  style={{
-                    ...styles.severity,
-                    color: severityColor(item.severity)
-                  }}
-                >
-                  {item.severity}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
 
-        <h2 style={styles.sectionTitle}>
-          Recommended Coping Strategies
-        </h2>
-        <p style={styles.sectionDescription}>
-          Here are some activities you can try as part of your
-          everyday student wellness routine.
-        </p>
+        {loading ? (
+          <section className="rec-empty-card">
+            <p>Loading your recommendations...</p>
+          </section>
+        ) : !hasAnyResults ? (
+          <section className="rec-empty-card">
+            <div className="rec-empty-icon">🌱</div>
+            <h2>No assessment results yet</h2>
+            <p>
+              Complete your DASS-21 or Feature Assessment to receive personalized coping recommendations.
+            </p>
+            <button className="rec-btn-primary" onClick={onBack}>
+              Back to Dashboard
+            </button>
+          </section>
+        ) : (
+          <>
+            {hasDassScores && (
+              <section className="rec-summary-card">
+                <h2>Your Assessment Summary</h2>
+                <p className="rec-summary-subtitle">These are your latest recorded screening scores.</p>
+                <div className="rec-score-grid">
+                  {categories.map((item) => (
+                    <div className="rec-score-card" key={item.name}>
+                      <span className="rec-score-name">{item.name}</span>
+                      <strong className="rec-score-value">{item.score}/42</strong>
+                      <span className={`rec-severity ${getSeverityClass(item.severity)}`}>
+                        {item.severity}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-        <div style={styles.recommendationGrid}>
-          {categories.map(item => (
-            <section style={styles.recommendationCard} key={item.name}>
-              <div style={styles.cardHeading}>
-            <span style={styles.icon}>
-                  {recommendationData[item.name].icon}
-                </span>
-                <div>
-                  <h3>{item.name}</h3>
-                  <span
-                    style={{
-                      ...styles.severity,
-                      color: severityColor(item.severity)
-                    }}
-                  >
-                    {item.severity} Level
-                  </span>
+            {mlAssessment && mlAssessment.recommendations?.length > 0 && (
+              <section className="rec-db-card">
+                <div className="rec-db-header-row">
+                  <h2 className="rec-section-title no-top-margin">🤖 Personalized Action Plan</h2>
+                  {mlAssessment.stress_level && (
+                    <span className={`rec-severity large ${getSeverityClass(mlAssessment.stress_level)}`}>
+                      Stress Level: {mlAssessment.stress_level} ({mlAssessment.stress_score}%)
+                    </span>
+                  )}
+                </div>
+
+                {mlAssessment.top_concerns?.length > 0 && (
+                  <div className="rec-feature-group">
+                    <span className="rec-feature-label">Identified Stress Factors:</span>
+                    <div className="rec-badge-container">
+                      {mlAssessment.top_concerns.map((concern, idx) => (
+                        <span key={idx} className="rec-feature-badge">
+                          ⚠️ {concern}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="rec-section-description">
+                  Targeted recommendations based on your latest lifestyle check-in:
+                </p>
+                <ul className="rec-activity-list">
+                  {mlAssessment.recommendations.map((rec, idx) => (
+                    <li key={idx}>{rec}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {hasDassScores && (
+              <div className="rec-dass-section">
+                <h2 className="rec-section-title">Recommended Coping Strategies</h2>
+                <p className="rec-section-description">
+                  Here are some activities you can try as part of your everyday student wellness routine.
+                </p>
+
+                <div className="rec-grid">
+                  {categories.map((item) => (
+                    <section className="rec-card" key={item.name}>
+                      <div className="rec-card-heading">
+                        <span className="rec-card-icon">{recommendationData[item.name].icon}</span>
+                        <div>
+                          <h3>{item.name}</h3>
+                          <span className={`rec-severity ${getSeverityClass(item.severity)}`}>
+                            {item.severity} Level
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="rec-card-description">
+                        Suggested activities to help you manage {item.name.toLowerCase()} concerns:
+                      </p>
+
+                      <ul className="rec-activity-list">
+                        {recommendationData[item.name].activities.map((activity, index) => (
+                          <li key={index}>{activity}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
                 </div>
               </div>
+            )}
 
-              <p style={styles.cardDescription}>
-                Suggested activities to help you manage
-                {` ${item.name.toLowerCase()}`} concerns:
+            <section className="rec-support-card">
+              <h3>💚 Remember, you are not alone.</h3>
+              <p>
+                These recommendations are general self-help strategies. If you continue experiencing difficulties, consider reaching out to the Laguna University Guidance Office or a qualified mental health professional.
               </p>
-
-              <ul style={styles.activityList}>
-                {recommendationData[item.name].activities.map(
-                  (activity, index) => (
-                    <li key={index}>{activity}</li>
-                  )
-                )}
-              </ul>
             </section>
-          ))}
+          </>
+        )}
+
+        <div className="rec-actions">
+          <button className="rec-btn-back" onClick={onBack}>
+            ← Back to Dashboard
+          </button>
         </div>
-
-        <section style={styles.supportCard}>
-          <h3>💚 Remember, you are not alone.</h3>
-          <p>
-            These recommendations are general self-help strategies.
-            If you continue experiencing difficulties, consider
-            reaching out to the Laguna University Guidance Office
-            or a qualified mental health professional.
-          </p>
-        </section>
-      </>
-    )}
-
-    <div style={styles.actions}>
-      <button style={styles.backButton} onClick={onBack}>
-        ← Back to Dashboard
-     </button>
-      {onLogout && (
-        <button style={styles.logoutButton} onClick={onLogout}>
-          Log Out
-        </button>
-      )}
+      </main>
     </div>
-  </main>
-</div>
-);
+  );
 }
-const styles = {
-page: {
-minHeight: "100vh",
-background: "#f4f9f7",
-color: "#294d46",
-fontFamily: '"Segoe UI", Arial, sans-serif'
-},
-header: {
-height: 70,
-padding: "0 6%",
-background: "#ffffff",
-borderBottom: "1px solid #e1ebe8",
-display: "flex",
-alignItems: "center",
-justifyContent: "space-between",
-flexWrap: "wrap",
-gap: 10
-},
-logo: {
-fontWeight: 800,
-letterSpacing: 1,
-color: "#073f38"
-},
-headerText: {
-color: "#7b8b86",
-fontSize: 13
-},
-container: {
-maxWidth: 1100,
-margin: "35px auto",
-padding: "0 16px 40px",
-boxSizing: "border-box"
-},
-eyebrow: {
-color: "#087c66",
-fontSize: 12,
-fontWeight: 800,
-letterSpacing: 1.5
-},
-title: {
-color: "#073f38",
-fontSize: "clamp(24px, 4vw, 30px)",
-margin: "8px 0"
-},
-subtitle: {
-color: "#7b8b86",
-lineHeight: 1.6
-},
-summary: {
-background: "#ffffff",
-padding: 20,
-borderRadius: 16,
-border: "1px solid #e1ebe8",
-marginTop: 28
-},
-scoreGrid: {
-display: "grid",
-gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-gap: 14,
-marginTop: 18
-},
-scoreCard: {
-background: "#f4f9f7",
-borderRadius: 12,
-padding: 16,
-display: "flex",
-flexDirection: "column",
-gap: 8
-},
-severity: {
-fontSize: 12,
-fontWeight: 800
-},
-sectionTitle: {
-marginTop: 35,
-color: "#073f38"
-},
-sectionDescription: {
-color: "#7b8b86",
-lineHeight: 1.6
-},
-recommendationGrid: {
-display: "grid",
-gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-gap: 18,
-marginTop: 20
-},
-recommendationCard: {
-background: "#ffffff",
-padding: 20,
-borderRadius: 16,
-border: "1px solid #e1ebe8"
-},
-cardHeading: {
-display: "flex",
-alignItems: "center",
-gap: 12
-},
-icon: {
-fontSize: 28
-},
-cardDescription: {
-color: "#7b8b86",
-fontSize: 14,
-lineHeight: 1.6,
-marginTop: 18
-},
-activityList: {
-paddingLeft: 20,
-lineHeight: 1.9,
-fontSize: 14
-},
-supportCard: {
-background: "#e8f5f1",
-padding: 20,
-borderRadius: 14,
-marginTop: 25,
-lineHeight: 1.7
-},
-actions: {
-display: "flex",
-gap: 12,
-flexWrap: "wrap",
-marginTop: 25
-},
-primaryButton: {
-background: "#087c66",
-color: "#ffffff",
-border: "none",
-padding: "12px 20px",
-borderRadius: 8,
-cursor: "pointer",
-fontWeight: "700"
-},
-backButton: {
-background: "#ffffff",
-color: "#294d46",
-border: "1px solid #d5e3dd",
-padding: "12px 18px",
-borderRadius: 8,
-cursor: "pointer" 
-},
-logoutButton: {
-background: "#fee2e2",
-color: "#b91c1c",
-border: "none",
-padding: "12px 18px",
-borderRadius: 8,
-cursor: "pointer"
-},
-emptyCard: {
-background: "#ffffff",
-padding: 30,
-borderRadius: 16,
-textAlign: "center",
-marginTop: 30,
-border: "1px solid #e1ebe8"
-}
-};
-export default Recommendations;

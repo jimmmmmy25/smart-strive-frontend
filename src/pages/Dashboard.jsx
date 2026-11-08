@@ -4,6 +4,8 @@ import "./Dashboard.css";
 
 function Dashboard({ onNavigate, onLogout }) {
   const [mood, setMood] = useState("");
+  const [submittingMood, setSubmittingMood] = useState(false);
+  const [loggedToday, setLoggedToday] = useState(false);
   const [showMoodMessage, setShowMoodMessage] = useState(false);
   const [showBaselineModal, setShowBaselineModal] = useState(false);
 
@@ -20,83 +22,87 @@ function Dashboard({ onNavigate, onLogout }) {
   const [latestAssessment, setLatestAssessment] = useState(null);
   const [isLoadingAssessment, setIsLoadingAssessment] = useState(true);
 
-  useEffect(() => {
-    async function fetchUserData() {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) {
-          setIsLoadingAssessment(false);
-          return;
-        }
-
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("first_name, last_name")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (profileData && profileData.first_name) {
-          setStudentName(profileData.first_name);
-        }
-
-        const { data: dassData } = await supabase
-          .from("dass_assessments")
-          .select("id")
-          .eq("user_id", user.id)
-          .limit(1);
-
-        if (!dassData || dassData.length === 0) {
-          setShowBaselineModal(true);
-        }
-
-        const { data: assessmentData, error: assessmentError } = await supabase
-          .from("dass_assessments")
-          .select("total_score, baseline_7_score, responses, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        if (!assessmentError && assessmentData && assessmentData.length > 0) {
-          const record = assessmentData[0];
-          const score = record.total_score ?? record.baseline_7_score ?? 0;
-
-          setLatestAssessment({
-            Stress: score,
-            level: getStressLevel(score),
-            date: new Date(record.created_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          });
-        } else {
-          setLatestAssessment(null);
-        }
-
-        const { data: moodData } = await supabase
-          .from("mood_logs")
-          .select("mood, note, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (moodData) {
-          const formattedMoods = moodData.map((m, idx) => ({
-            id: idx,
-            mood: m.note || "Okay",
-            date: new Date(m.created_at).toLocaleDateString(),
-            timestamp: m.created_at,
-          }));
-          setMoodHistory(formattedMoods);
-        }
-      } catch (err) {
-        console.error("Error fetching user data from Supabase:", err.message);
-      } finally {
+  const fetchUserData = async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
         setIsLoadingAssessment(false);
+        return;
       }
-    }
 
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileData && profileData.first_name) {
+        setStudentName(profileData.first_name);
+      }
+
+      const { data: dassData } = await supabase
+        .from("dass_assessments")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (!dassData || dassData.length === 0) {
+        setShowBaselineModal(true);
+      }
+
+      const { data: assessmentData, error: assessmentError } = await supabase
+        .from("dass_assessments")
+        .select("total_score, baseline_7_score, responses, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!assessmentError && assessmentData && assessmentData.length > 0) {
+        const record = assessmentData[0];
+        const score = record.total_score ?? record.baseline_7_score ?? 0;
+
+        setLatestAssessment({
+          Stress: score,
+          level: getStressLevel(score),
+          date: new Date(record.created_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        });
+      } else {
+        setLatestAssessment(null);
+      }
+
+      const { data: moodData } = await supabase
+        .from("mood_logs")
+        .select("id, mood, note, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (moodData) {
+        const todayStr = new Date().toLocaleDateString();
+        const formattedMoods = moodData.map((m) => ({
+          id: m.id,
+          mood: m.note || "Okay",
+          date: new Date(m.created_at).toLocaleDateString(),
+          timestamp: m.created_at,
+        }));
+
+        setMoodHistory(formattedMoods);
+        const hasTodayLog = formattedMoods.some((m) => m.date === todayStr);
+        setLoggedToday(hasTodayLog);
+      }
+    } catch (err) {
+      console.error("Error fetching user data from Supabase:", err.message);
+    } finally {
+      setIsLoadingAssessment(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -162,32 +168,49 @@ function Dashboard({ onNavigate, onLogout }) {
       return;
     }
 
+    if (submittingMood) return;
+
+    setSubmittingMood(true);
     const moodScoreMap = { Overwhelmed: 1, Stressed: 2, Okay: 3, Good: 4, Great: 5 };
+    const todayDate = new Date().toISOString().split("T")[0];
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from("mood_logs").insert([
-          {
-            user_id: user.id,
-            mood: moodScoreMap[mood] || 3,
-            note: mood,
-          },
-        ]);
+        const { error } = await supabase.from("mood_logs").upsert(
+          [
+            {
+              user_id: user.id,
+              mood: moodScoreMap[mood] || 3,
+              note: mood,
+              log_date: todayDate,
+            },
+          ],
+          { onConflict: "user_id, log_date" }
+        );
+
+        if (!error) {
+          setShowMoodMessage(true);
+          setLoggedToday(true);
+          await fetchUserData();
+        } else {
+          await supabase.from("mood_logs").insert([
+            {
+              user_id: user.id,
+              mood: moodScoreMap[mood] || 3,
+              note: mood,
+            },
+          ]);
+          setShowMoodMessage(true);
+          setLoggedToday(true);
+          await fetchUserData();
+        }
       }
     } catch (err) {
       console.error("Failed to save mood:", err);
+    } finally {
+      setSubmittingMood(false);
     }
-
-    const newEntry = {
-      id: Date.now(),
-      mood: mood,
-      date: new Date().toLocaleDateString(),
-      timestamp: new Date().toISOString(),
-    };
-
-    setMoodHistory([newEntry, ...moodHistory]);
-    setShowMoodMessage(true);
   };
 
   const stressScore = latestAssessment ? Number(latestAssessment.Stress) : null;
@@ -347,29 +370,29 @@ function Dashboard({ onNavigate, onLogout }) {
                 })}
               </div>
 
-              <button onClick={saveMood} style={{ marginTop: "16px", width: "100%", background: colors.green, color: "#FFFFFF", border: "none", borderRadius: "9px", padding: "11px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>Save Mood Check-in</button>
+              <button
+                onClick={saveMood}
+                disabled={submittingMood || !mood}
+                style={{
+                  marginTop: "16px",
+                  width: "100%",
+                  background: submittingMood || !mood ? "#A8CEC2" : colors.green,
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "9px",
+                  padding: "11px",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  cursor: submittingMood || !mood ? "not-allowed" : "pointer",
+                }}
+              >
+                {submittingMood ? "Saving..." : loggedToday ? "Update Today's Mood Check-in" : "Save Mood Check-in"}
+              </button>
+
               {showMoodMessage && <p style={{ margin: "12px 0 0", background: colors.greenLight, color: colors.green, padding: "11px", borderRadius: "9px", fontSize: "11px" }}>✓ Saved successfully!</p>}
 
-              {/* RECENT MOOD HISTORY */}
-              <div style={{ marginTop: "22px", borderTop: `1px solid ${colors.border}`, paddingTop: "15px" }}>
-                <h4 style={{ color: colors.dark, fontSize: "13px" }}>Recent Mood History</h4>
-                {moodHistory.length === 0 ? (
-                  <p style={{ color: colors.muted, fontSize: "11px" }}>No mood entries yet. Start your daily check-in!</p>
-                ) : (
-                  moodHistory.slice(0, 5).map((entry) => {
-                    const selectedMood = moods.find((item) => item.label === entry.mood);
-                    return (
-                      <div key={entry.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${colors.border}`, fontSize: "11px" }}>
-                        <span>{selectedMood?.emoji || "🌿"} {entry.mood}</span>
-                        <span style={{ color: colors.muted }}>{entry.date}</span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
               {/* WEEKLY MOOD TREND */}
-              <div style={{ marginTop: "22px", borderTop: `1px solid ${colors.border}`, paddingTop: "18px" }}>
+              <div style={{ marginTop: "24px", borderTop: `1px solid ${colors.border}`, paddingTop: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <div>
                     <h4 style={{ color: colors.dark, fontSize: "13px", margin: "0 0 5px" }}>Weekly Mood Trend</h4>
