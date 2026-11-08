@@ -100,7 +100,7 @@ export default function DassAssessment({ onBack, onComplete }) {
       const { error: dbError } = await supabase.from("dass_assessments").insert([
         {
           user_id: user.id,
-          assessment_type: "DASS-7 Baseline",
+          assessment_type: "DASS-21 Baseline",
           total_score: calculated.rawTotal,
           baseline_7_score: calculated.baseline7Score,
           responses: {
@@ -152,12 +152,12 @@ export default function DassAssessment({ onBack, onComplete }) {
         <strong>
           SMART <span className="brand-accent">STRIVE</span>
         </strong>
-        <span className="dass-assessment-label">DASS-7 Baseline Screening</span>
+        <span className="dass-assessment-label">DASS-21 Baseline Screening</span>
       </header>
 
       <main className="dass-assessment-container">
         <span className="dass-assessment-eyebrow">STUDENT WELL-BEING</span>
-        <h1>DASS-7 Baseline Assessment</h1>
+        <h1>DASS-21 Baseline Assessment</h1>
         <p className="dass-assessment-description">
           Please indicate how much each statement applied to you over the past week to establish your baseline.
         </p>
