@@ -136,7 +136,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 18px;
+  padding: 16px 20px;
   border-radius: 12px;
   border: 1px solid #e1ebe6;
   background: #ffffff;
@@ -158,23 +158,23 @@
 .option-bullet {
   font-size: 14px;
   color: #087c66;
+  flex-shrink: 0;
 }
 
 .option-text-group {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.option-value {
-  font-size: 13px;
-  font-weight: 700;
-  color: #123f35;
+  align-items: center;
+  width: 100%;
 }
 
 .option-hint {
-  font-size: 11px;
-  color: #7b8b86;
+  font-size: 13px;
+  font-weight: 600;
+  color: #123f35;
+}
+
+.assessment-option.selected .option-hint {
+  color: #087c66;
 }
 
 .assessment-error {

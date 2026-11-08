@@ -117,14 +117,8 @@ export default function Assessment({ onBack, onComplete }) {
     }
   });
 
-  const [acknowledgedCategories, setAcknowledgedCategories] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem("smartStriveAcknowledgedCategories");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Always start with empty acknowledgments so category intros show up for every assessment
+  const [acknowledgedCategories, setAcknowledgedCategories] = useState([]);
 
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -140,11 +134,11 @@ export default function Assessment({ onBack, onComplete }) {
     fetch(`${API}/health`).catch(() => {});
   }, []);
 
+  // Save only draft answers and active step to sessionStorage for refresh tolerance
   useEffect(() => {
     sessionStorage.setItem("smartStriveAssessmentDraftAnswers", JSON.stringify(answers));
     sessionStorage.setItem("smartStriveAssessmentDraftStep", current.toString());
-    sessionStorage.setItem("smartStriveAcknowledgedCategories", JSON.stringify(acknowledgedCategories));
-  }, [answers, current, acknowledgedCategories]);
+  }, [answers, current]);
 
   async function submit(finalAnswers) {
     setSubmitting(true);
@@ -153,7 +147,6 @@ export default function Assessment({ onBack, onComplete }) {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error("Please log in again.");
 
-      // Run DASS fetch and FastAPI prediction in parallel
       const dassPromise = supabase
         .from("dass_assessments")
         .select("responses")
@@ -203,7 +196,6 @@ export default function Assessment({ onBack, onComplete }) {
 
       sessionStorage.removeItem("smartStriveAssessmentDraftAnswers");
       sessionStorage.removeItem("smartStriveAssessmentDraftStep");
-      sessionStorage.removeItem("smartStriveAcknowledgedCategories");
 
       const history = JSON.parse(localStorage.getItem("smartStriveAssessmentHistory") || "[]");
       localStorage.setItem("smartStriveAssessmentHistory", JSON.stringify([{
@@ -264,30 +256,30 @@ export default function Assessment({ onBack, onComplete }) {
   function getHintText(category, scale, val) {
     if (category === "Problem") {
       const hints = [
-        "0 - None / Did not experience at all",
-        "1 - Slight / Rarely an issue",
-        "2 - Moderate / Noticeable sometimes",
-        "3 - Significant / Frequently an issue",
-        "4 - Severe / Very heavy impact",
-        "5 - Extremely Severe / Constant crisis"
+        "None / Did not experience at all",
+        "Slight / Rarely an issue",
+        "Moderate / Noticeable sometimes",
+        "Significant / Frequently an issue",
+        "Severe / Very heavy impact",
+        "Extremely Severe / Constant crisis"
       ];
       return hints[val];
     } else if (category === "Better") {
       const hints = [
-        "0 - Very poor / Extremely dissatisfied",
-        "1 - Poor / Needs major improvement",
-        "2 - Fair / Adequate but mixed",
-        "3 - Good / Generally satisfactory",
-        "4 - Very good / High quality",
-        "5 - Excellent / Optimal condition"
+        "Very poor / Extremely dissatisfied",
+        "Poor / Needs major improvement",
+        "Fair / Adequate but mixed",
+        "Good / Generally satisfactory",
+        "Very good / High quality",
+        "Excellent / Optimal condition"
       ];
       return hints[val];
     } else {
       const hints = [
-        "0 - None / No support available",
-        "1 - A little / Rarely available",
-        "2 - Some / Moderately supportive",
-        "3 - A lot / Highly reliable support"
+        "None / No support available",
+        "A little / Rarely available",
+        "Some / Moderately supportive",
+        "A lot / Highly reliable support"
       ];
       return hints[val];
     }
@@ -330,9 +322,9 @@ export default function Assessment({ onBack, onComplete }) {
               {currentCategory === "Support" && "Social Support Systems"}
             </h2>
             <p style={{ fontSize: "14px", color: "#4A5568", lineHeight: "1.6", maxWidth: "550px", margin: "0 auto 25px" }}>
-              {currentCategory === "Problem" && "For this next set of questions, higher numbers mean MORE of a problem or higher stress impact (0 = No issue, 5 = Extreme issue)."}
-              {currentCategory === "Better" && "For this next set of questions, higher numbers mean BETTER conditions or higher satisfaction (0 = Very poor, 5 = Excellent)."}
-              {currentCategory === "Support" && "For this final question, rate how much structural backing you receive from your surroundings (0 = None, 3 = A lot)."}
+              {currentCategory === "Problem" && "For this next set of questions, higher scale choices mean MORE of a problem or higher stress impact."}
+              {currentCategory === "Better" && "For this next set of questions, higher scale choices mean BETTER conditions or higher satisfaction."}
+              {currentCategory === "Support" && "For this final question, rate how much structural backing you receive from your surroundings."}
             </p>
             <button
               className="assessment-btn-next"
@@ -365,9 +357,9 @@ export default function Assessment({ onBack, onComplete }) {
                 background: currentItem.category === "Problem" ? "#FEE2E2" : currentItem.category === "Better" ? "#E8F5F0" : "#EDF3FF",
                 color: currentItem.category === "Problem" ? "#DC2626" : currentItem.category === "Better" ? "#087C66" : "#4267A1"
               }}>
-                {currentItem.category === "Problem" && "Higher Score = More Problem"}
-                {currentItem.category === "Better" && "Higher Score = Better Condition"}
-                {currentItem.category === "Support" && "Support Scale (0-3)"}
+                {currentItem.category === "Problem" && "Higher Option = More Problem"}
+                {currentItem.category === "Better" && "Higher Option = Better Condition"}
+                {currentItem.category === "Support" && "Support Scale"}
               </span>
             </div>
             
@@ -386,7 +378,6 @@ export default function Assessment({ onBack, onComplete }) {
                   >
                     <span className="option-bullet">{isSelected ? "●" : "○"}</span>
                     <div className="option-text-group">
-                      <span className="option-value">{val}</span>
                       <span className="option-hint">
                         {getHintText(currentItem.category, currentItem.scale, val)}
                       </span>
