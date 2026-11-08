@@ -1,8 +1,17 @@
+/* Reset default browser margins */
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .assessment-page {
   min-height: 100vh;
   background: #f4f9f7;
   color: #294d46;
   font-family: "Segoe UI", Arial, sans-serif;
+  width: 100%; /* Ensure it takes full width */
+  margin: 0;   /* Remove any potential margins */
+  padding: 0;  /* Remove any potential padding */
 }
 
 .assessment-header {
@@ -14,6 +23,9 @@
   flex-wrap: wrap;
   gap: 12px;
   border-bottom: 1px solid #e1ebe8;
+  width: 100%; /* Force full width */
+  box-sizing: border-box; /* Include padding in width calculation */
+  margin: 0; /* Remove top/side margins */
 }
 
 .assessment-back {

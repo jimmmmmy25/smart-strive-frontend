@@ -425,7 +425,7 @@ function Dashboard({ onNavigate, onLogout }) {
                 )}
               </div>
 
-              <button onClick={() => goTo("assessment")} style={{ width: "100%", marginTop: "13px", background: "#FFFFFF", border: `1px solid ${colors.green}`, color: colors.green, borderRadius: "9px", padding: "11px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>Take Assessment →</button>
+              <button onClick={() => goTo("dassAssessment")} style={{ width: "100%", marginTop: "13px", background: "#FFFFFF", border: `1px solid ${colors.green}`, color: colors.green, borderRadius: "9px", padding: "11px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>Take Assessment →</button>
             </section>
           </div>
         </div>

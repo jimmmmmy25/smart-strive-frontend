@@ -41,6 +41,10 @@ const choiceHints = [
 ];
 
 export default function DassAssessment({ onBack, onComplete }) {
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return !sessionStorage.getItem("smartStriveDassStarted");
+  });
+
   const [answers, setAnswers] = useState(() => {
     try {
       const s = sessionStorage.getItem("smartStriveDassDraft");
@@ -58,6 +62,11 @@ export default function DassAssessment({ onBack, onComplete }) {
     sessionStorage.setItem("smartStriveDassDraft", JSON.stringify(answers));
     sessionStorage.setItem("smartStriveDassStep", String(current));
   }, [answers, current]);
+
+  function handleProceed() {
+    sessionStorage.setItem("smartStriveDassStarted", "true");
+    setShowWelcome(false);
+  }
 
   function calculateScores() {
     const rawScores = { Depression: 0, Anxiety: 0, Stress: 0 };
@@ -114,6 +123,7 @@ export default function DassAssessment({ onBack, onComplete }) {
 
       sessionStorage.removeItem("smartStriveDassDraft");
       sessionStorage.removeItem("smartStriveDassStep");
+      sessionStorage.removeItem("smartStriveDassStarted");
 
       if (typeof onComplete === "function") {
         onComplete(calculated.subscales);
@@ -158,81 +168,108 @@ export default function DassAssessment({ onBack, onComplete }) {
       <main className="dass-assessment-container">
         <span className="dass-assessment-eyebrow">STUDENT WELL-BEING</span>
         <h1>DASS-21 Baseline Assessment</h1>
-        <p className="dass-assessment-description">
-          Please indicate how much each statement applied to you over the past week to establish your baseline.
-        </p>
 
         <div className="dass-assessment-notice">
           This baseline screening helps us personalize your dashboard metrics.
         </div>
 
-        <section className="dass-assessment-card">
-          <div className="dass-assessment-progress-row">
-            <span>Question {current + 1} of 21</span>
-            <strong>{answers.filter((a) => a !== null).length}/21 answered</strong>
-          </div>
-
-          <div className="dass-assessment-track">
-            <div className="dass-assessment-fill" style={{ width: `${progress}%` }} />
-          </div>
-
-          <p className="dass-assessment-number">
-            QUESTION {String(current + 1).padStart(2, "0")}
-          </p>
-          <h2 className="dass-assessment-question">{questions[current][0]}</h2>
-
-          <div className="dass-assessment-options">
-            {choices.map((choice, index) => {
-              const isSelected = answers[current] === index;
-              return (
-                <button
-                  key={index}
-                  disabled={submitting}
-                  onClick={() => {
-                    const updated = [...answers];
-                    updated[current] = index;
-                    setAnswers(updated);
-                    setError("");
-                  }}
-                  className={`dass-assessment-option ${isSelected ? "selected" : ""}`}
-                >
-                  <span className="option-bullet">{isSelected ? "●" : "○"}</span>
-                  <div className="option-text-group" style={{ display: "flex", flexDirection: "column", textAlign: "left", width: "100%" }}>
-                    <span style={{ fontWeight: "600" }}>{choice}</span>
-                    <span style={{ fontSize: "11px", color: "#7B8B86", marginTop: "3px" }}>{choiceHints[index]}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {error && <p className="dass-assessment-error">⚠️ {error}</p>}
-
-          <div className="dass-assessment-actions">
-            <button
-              className="dass-assessment-btn-previous"
-              disabled={current === 0 || submitting}
-              onClick={() => {
-                setCurrent(current - 1);
-                setError("");
-              }}
-            >
-              Previous
-            </button>
-
+        {showWelcome ? (
+          <section className="dass-assessment-card" style={{ textAlign: "center", padding: "40px 20px" }}>
+            <div style={{ fontSize: "40px", marginBottom: "15px" }}>📋</div>
+            <span className="dass-assessment-number" style={{ letterSpacing: "1px", marginBottom: "10px", display: "block" }}>
+              INTRODUCTION
+            </span>
+            <h2 style={{ fontSize: "24px", color: "#123F35", marginBottom: "5px" }}>
+              Welcome to the DASS-21
+            </h2>
+            <div style={{ fontSize: "10px", color: "#4a5568a6", lineHeight: "1.6", maxWidth: "550px", margin: "0 auto 25px", textAlign: "center" }}>
+              <p style={{ marginBottom: "25px" }}>
+                The <strong>Depression, Anxiety, and Stress Scale (DASS-21)</strong> is a standard self-report questionnaire designed to measure emotional states. This is a screening tool, not a clinical diagnosis.
+              </p>
+              <ul style={{ paddingLeft: "20px", margin: "0", textAlign: "left" }}>
+                <li style={{ marginBottom: "6px" , fontSize: "14px", color: "#4A5568" }}>Please read each statement carefully.</li>
+                <li style={{ marginBottom: "6px" , fontSize: "14px", color: "#4A5568" }}>Select how much it applied to you <strong>over the past week</strong>.</li>
+                <li style={{ marginBottom: "6px" , fontSize: "14px", color: "#4A5568" }}>There are no right or wrong answers.</li>
+                <li style={{ marginBottom: "6px" , fontSize: "14px", color: "#4A5568" }}>Your responses will help us personalize your dashboard metrics.</li>
+              </ul>
+            </div>
             <button
               className="dass-assessment-btn-next"
-              onClick={next}
-              disabled={submitting}
+              style={{ margin: "0 auto", padding: "12px 30px" }}
+              onClick={handleProceed}
             >
-              {submitting
-                ? "Submitting..."
-                : current === 20
-                ? "Complete Baseline"
-                : "Next →"}
+              Continue to Questions →
             </button>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <section className="dass-assessment-card">
+            <div className="dass-assessment-progress-row">
+              <span>Question {current + 1} of 21</span>
+              <strong>{answers.filter((a) => a !== null).length}/21 answered</strong>
+            </div>
+
+            <div className="dass-assessment-track">
+              <div className="dass-assessment-fill" style={{ width: `${progress}%` }} />
+            </div>
+
+            <p className="dass-assessment-number">
+              QUESTION {String(current + 1).padStart(2, "0")}
+            </p>
+            <h2 className="dass-assessment-question">{questions[current][0]}</h2>
+
+            <div className="dass-assessment-options">
+              {choices.map((choice, index) => {
+                const isSelected = answers[current] === index;
+                return (
+                  <button
+                    key={index}
+                    disabled={submitting}
+                    onClick={() => {
+                      const updated = [...answers];
+                      updated[current] = index;
+                      setAnswers(updated);
+                      setError("");
+                    }}
+                    className={`dass-assessment-option ${isSelected ? "selected" : ""}`}
+                  >
+                    <span className="option-bullet">{isSelected ? "●" : "○"}</span>
+                    <div className="option-text-group">
+                      <span className="option-value">{choice}</span>
+                      <span className="option-hint">{choiceHints[index]}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {error && <p className="dass-assessment-error">⚠️ {error}</p>}
+
+            <div className="dass-assessment-actions">
+              <button
+                className="dass-assessment-btn-previous"
+                disabled={current === 0 || submitting}
+                onClick={() => {
+                  setCurrent(current - 1);
+                  setError("");
+                }}
+              >
+                Previous
+              </button>
+
+              <button
+                className="dass-assessment-btn-next"
+                onClick={next}
+                disabled={submitting}
+              >
+                {submitting
+                  ? "Submitting..."
+                  : current === 20
+                  ? "Complete Baseline"
+                  : "Next →"}
+              </button>
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
