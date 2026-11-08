@@ -192,6 +192,7 @@ function App() {
         onLogout={async () => {
           await supabase.auth.signOut();
           sessionStorage.removeItem("smartStriveCurrentPage");
+          sessionStorage.clear();
           changePage("landing");
         }}
       />
