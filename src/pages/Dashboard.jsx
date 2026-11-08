@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 import "./Dashboard.css";
 
+// Import SVG assets (Ensure these files exist in src/assets/icons/)
+import dashboardIcon from "../assets/icons/dashboard.svg";
+import documentIcon from "../assets/icons/document.svg";
+import progressIcon from "../assets/icons/my-progress.svg";
+import recommendationsIcon from "../assets/icons/recommendations.svg";
+import historyIcon from "../assets/icons/history.svg";
+import profileIcon from "../assets/icons/profile.svg";
+import logoutIcon from "../assets/icons/logout.svg";
+
 function Dashboard({ onNavigate, onLogout }) {
   const [mood, setMood] = useState("");
   const [submittingMood, setSubmittingMood] = useState(false);
@@ -132,12 +141,12 @@ function Dashboard({ onNavigate, onLogout }) {
   };
 
   const menuItems = [
-    { icon: "⌂", label: "Home", page: "dashboard" },
-    { icon: "▤", label: "Assessment", page: "assessment" },
-    { icon: "↗️", label: "My Progress", page: "progress" },
-    { icon: "♡", label: "Recommendations", page: "recommendations" },
-    { icon: "◷", label: "History", page: "progress" },
-    { icon: "⚙️", label: "Profile", page: "profile" },
+    { icon: dashboardIcon, label: "Home", page: "dashboard" },
+    { icon: documentIcon, label: "Assessment", page: "assessment" },
+    { icon: progressIcon, label: "My Progress", page: "progress" },
+    { icon: recommendationsIcon, label: "Recommendations", page: "recommendations" },
+    { icon: historyIcon, label: "History", page: "progress" },
+    { icon: profileIcon, label: "Profile", page: "profile" },
   ];
 
   const moods = [
@@ -216,10 +225,10 @@ function Dashboard({ onNavigate, onLogout }) {
   const stressScore = latestAssessment ? Number(latestAssessment.Stress) : null;
 
   function getStressLevel(score) {
-    if (score <= 9) return "Normal";
-    if (score <= 13) return "Mild";
-    if (score <= 20) return "Moderate";
-    if (score <= 27) return "Severe";
+    if (score <= 14) return "Normal";
+    if (score <= 18) return "Mild";
+    if (score <= 25) return "Moderate";
+    if (score <= 33) return "Severe";
     return "Extremely Severe";
   }
 
@@ -228,11 +237,19 @@ function Dashboard({ onNavigate, onLogout }) {
 
   const stressColors = {
     Normal: { color: colors.green, background: colors.greenLight },
-    Mild: { color: "#4267A1", background: "#EDF3FF" },
+    Mild: { color: "#65A30D", background: "#F7FEE7" },
     Moderate: { color: colors.orange, background: colors.orangeLight },
     Severe: { color: colors.red, background: colors.redLight },
     "Extremely Severe": { color: colors.red, background: colors.redLight },
   };
+
+  const dassRanges = [
+    { label: "Normal", range: "0–14", color: colors.green },
+    { label: "Mild", range: "15–18", color: "#65A30D" },
+    { label: "Moderate", range: "19–25", color: colors.orange },
+    { label: "Severe", range: "26–33", color: colors.red },
+    { label: "Ex. Severe", range: "34–42", color: colors.red },
+  ];
 
   const weeklyMoodData = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
@@ -287,21 +304,80 @@ function Dashboard({ onNavigate, onLogout }) {
             <div style={{ color: "#A8CEC2", fontSize: "10px", marginTop: "3px" }}>Student Wellness</div>
           </div>
         </div>
+
         <div style={{ fontSize: "9px", color: "#91B9AE", letterSpacing: "1.5px", fontWeight: "700", padding: "0 13px 12px" }}>MAIN MENU</div>
+
         <nav style={{ display: "grid", gap: "6px" }}>
           {menuItems.map((item) => {
             const active = item.page === "dashboard";
             return (
-              <button key={item.label} onClick={() => goTo(item.page)} style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%", padding: "12px 14px", border: "none", borderRadius: "10px", background: active ? "#087C66" : "transparent", color: active ? "#FFFFFF" : "#C8DDD7", textAlign: "left", fontSize: "12px", fontWeight: active ? "700" : "500", cursor: "pointer" }}>
-                <span style={{ width: "20px", textAlign: "center", fontSize: "18px" }}>{item.icon}</span>
+              <button
+                key={item.label}
+                onClick={() => goTo(item.page)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "none",
+                  borderRadius: "10px",
+                  background: active ? "#087C66" : "transparent",
+                  color: active ? "#FFFFFF" : "#C8DDD7",
+                  textAlign: "left",
+                  fontSize: "12px",
+                  fontWeight: active ? "700" : "500",
+                  cursor: "pointer",
+                }}
+              >
+                <img
+                  src={item.icon}
+                  alt={item.label}
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    filter: active
+                      ? "brightness(0) invert(1)"
+                      : "invert(88%) sepia(9%) saturate(417%) hue-rotate(114deg) brightness(95%) contrast(88%)",
+                  }}
+                />
                 {item.label}
                 {active && <span style={{ marginLeft: "auto" }}>›</span>}
               </button>
             );
           })}
         </nav>
+
         <div style={{ marginTop: "auto", padding: "18px 10px 0" }}>
-          <button onClick={onLogout} style={{ width: "100%", background: "transparent", color: "#D5E7E1", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "9px", padding: "11px", cursor: "pointer", fontSize: "12px" }}>↪️ Log Out</button>
+          <button
+            onClick={onLogout}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              width: "100%",
+              background: "transparent",
+              color: "#e05858",
+              border: "1px solid rgba(255,255,255,0.16)",
+              borderRadius: "9px",
+              padding: "11px",
+              cursor: "pointer",
+              fontSize: "12px",
+            }}
+          >
+            <img 
+              src={logoutIcon} 
+              alt="Log Out" 
+              style={{ 
+              width: "16px", 
+              height: "16px", 
+              filter: "invert(45%) sepia(59%) saturate(1637%) hue-rotate(326deg) brightness(94%) contrast(87%)"
+              }} 
+/>
+
+            Log Out
+          </button>
         </div>
       </aside>
 
@@ -324,7 +400,7 @@ function Dashboard({ onNavigate, onLogout }) {
               <div style={{ display: "inline-block", background: "#FFFFFF", color: colors.green, padding: "6px 10px", borderRadius: "20px", fontSize: "9px", fontWeight: "800", letterSpacing: "1px", marginBottom: "13px" }}>YOUR STUDENT WELLNESS SPACE</div>
               <h1 style={{ fontSize: "clamp(25px, 3vw, 35px)", lineHeight: "1.2", color: colors.dark, margin: "0 0 10px" }}>Hi, {studentName}! 👋</h1>
               <p style={{ color: colors.text, fontSize: "13px", lineHeight: "1.8", margin: "0 0 20px", maxWidth: "480px" }}>Your well-being matters. Check in with how you feel and take steps toward a healthier day.</p>
-              <button onClick={() => goTo("assessment")} style={{ background: colors.green, color: "#FFFFFF", border: "none", borderRadius: "10px", padding: "12px 19px", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 5px 12px rgba(8,124,102,0.15)" }}>Take Comprehensive Assessment →</button>
+              <button onClick={() => goTo("dassAssessment")} style={{ background: colors.green, color: "#FFFFFF", border: "none", borderRadius: "10px", padding: "12px 19px", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 5px 12px rgba(8,124,102,0.15)" }}>Take DASS-21 Screening →</button>
             </div>
             <div style={{ width: "150px", height: "150px", borderRadius: "50%", background: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "75px", flexShrink: 0 }}>🌱</div>
           </section>
@@ -421,7 +497,7 @@ function Dashboard({ onNavigate, onLogout }) {
             {/* CURRENT STRESS LEVEL */}
             <section style={cardStyle}>
               <h3 style={{ fontSize: "15px", color: colors.dark, margin: "0 0 6px" }}>Your Current Stress Level</h3>
-              <p style={{ fontSize: "11px", color: colors.muted, lineHeight: "1.6", margin: "0 0 18px" }}>Your latest assessment result from Supabase.</p>
+              <p style={{ fontSize: "11px", color: colors.muted, lineHeight: "1.6", margin: "0 0 18px" }}>Latest recorded DASS-21 screening result.</p>
 
               <div style={{ background: "#F7FAF8", border: `1px solid ${colors.border}`, borderRadius: "14px", padding: "20px 14px", textAlign: "center" }}>
                 {isLoadingAssessment ? (
@@ -439,7 +515,7 @@ function Dashboard({ onNavigate, onLogout }) {
                 ) : (
                   <>
                     <div style={{ fontSize: "38px", marginBottom: "9px" }}>💚</div>
-                    <div style={{ fontSize: "30px", fontWeight: "800", color: colors.dark }}>{stressScore}</div>
+                    <div style={{ fontSize: "30px", fontWeight: "800", color: colors.dark }}>{stressScore} / 42</div>
                     <span style={{ display: "inline-block", marginTop: "8px", padding: "7px 13px", background: stressColors[stressLevel]?.background || colors.greenLight, color: stressColors[stressLevel]?.color || colors.green, borderRadius: "20px", fontSize: "11px", fontWeight: "800" }}>
                       {stressLevel.toUpperCase()}
                     </span>
@@ -448,7 +524,20 @@ function Dashboard({ onNavigate, onLogout }) {
                 )}
               </div>
 
-              <button onClick={() => goTo("dassAssessment")} style={{ width: "100%", marginTop: "13px", background: "#FFFFFF", border: `1px solid ${colors.green}`, color: colors.green, borderRadius: "9px", padding: "11px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>Take Assessment →</button>
+              {/* DASS-21 STRESS SCORING REFERENCE LEGEND */}
+              <div style={{ marginTop: "18px", borderTop: `1px solid ${colors.border}`, paddingTop: "14px" }}>
+                <span style={{ fontSize: "10px", fontWeight: "700", color: colors.muted, textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: "10px" }}>
+                  DASS-21 Stress Score Guide
+                </span>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "4px", textAlign: "center" }}>
+                  {dassRanges.map((item) => (
+                    <div key={item.label} style={{ background: "#F4F9F7", borderRadius: "8px", padding: "6px 2px", border: `1px solid ${colors.border}` }}>
+                      <div style={{ fontSize: "9px", fontWeight: "700", color: item.color }}>{item.label}</div>
+                      <div style={{ fontSize: "9px", color: colors.muted, marginTop: "2px" }}>{item.range}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </section>
           </div>
         </div>
