@@ -3,6 +3,7 @@ import { supabase } from "../services/supabaseClient";
 import "./Assessment.css";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 const featureQuestions = [
   {
     id: "study_load",
@@ -134,6 +135,11 @@ export default function Assessment({ onBack, onComplete }) {
 
   const showIntro = !acknowledgedCategories.includes(currentCategory);
 
+  // Warm up FastAPI backend silently in the background on mount
+  useEffect(() => {
+    fetch(`${API}/health`).catch(() => {});
+  }, []);
+
   useEffect(() => {
     sessionStorage.setItem("smartStriveAssessmentDraftAnswers", JSON.stringify(answers));
     sessionStorage.setItem("smartStriveAssessmentDraftStep", current.toString());
@@ -147,33 +153,38 @@ export default function Assessment({ onBack, onComplete }) {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error("Please log in again.");
 
-      const { data: latestDass } = await supabase
+      // Run DASS fetch and FastAPI prediction in parallel
+      const dassPromise = supabase
         .from("dass_assessments")
         .select("responses")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1);
 
+      const apiPromise = fetch(`${API}/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: user.id, features: finalAnswers }),
+      });
+
+      const [latestDassRes, res] = await Promise.all([dassPromise, apiPromise]);
+
+      if (!res.ok) throw new Error("The prediction service is unavailable.");
+      const r = await res.json();
+
       let dass7Array = null;
+      const latestDass = latestDassRes.data;
       if (latestDass && latestDass.length > 0 && latestDass[0].responses?.answers) {
         const allAnswers = latestDass[0].responses.answers;
         const dass7Indices = [0, 5, 7, 10, 11, 13, 17];
         dass7Array = dass7Indices.map((idx) => allAnswers[idx]);
       }
 
-      const res = await fetch(`${API}/predict`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_id: user.id, features: finalAnswers }),
-      });
-      if (!res.ok) throw new Error("The prediction service is unavailable.");
-      const r = await res.json();
-
       const weekly = r.stress_level !== "Low" || r.stress_score >= 33;
       const nextDue = new Date(Date.now() + (weekly ? 7 : 30) * 86400000).toISOString();
       const dbStressLevel = r.stress_level 
-      ? r.stress_level.charAt(0).toUpperCase() + r.stress_level.slice(1).toLowerCase()
-      : "Moderate";
+        ? r.stress_level.charAt(0).toUpperCase() + r.stress_level.slice(1).toLowerCase()
+        : "Moderate";
 
       const { error: dbError } = await supabase.from("assessments").insert([{
         user_id: user.id,
@@ -397,15 +408,20 @@ export default function Assessment({ onBack, onComplete }) {
               </button>
 
               <button
-                className="assessment-btn-next"
+                className={`assessment-btn-next ${submitting ? "submitting" : ""}`}
                 onClick={next}
                 disabled={submitting}
               >
-                {submitting
-                  ? "Submitting..."
-                  : current === totalQuestions - 1
-                  ? "Submit Assessment"
-                  : "Next →"}
+                {submitting ? (
+                  <>
+                    <span className="btn-spinner" />
+                    <span>Analyzing Answers...</span>
+                  </>
+                ) : current === totalQuestions - 1 ? (
+                  "Submit Assessment →"
+                ) : (
+                  "Next →"
+                )}
               </button>
             </div>
           </section>

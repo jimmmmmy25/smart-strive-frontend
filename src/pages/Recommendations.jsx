@@ -62,7 +62,8 @@ const getSeverity = (category, score) => {
 export default function Recommendations({ score: initialScore, onBack }) {
   const [dassScores, setDassScores] = useState(initialScore || null);
   const [mlAssessment, setMlAssessment] = useState(null);
-  const [loading, setLoading] = useState(!initialScore);
+  // Always start loading as true to avoid initial flash
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchUserAssessmentData() {
@@ -73,6 +74,8 @@ export default function Recommendations({ score: initialScore, onBack }) {
           return;
         }
 
+        // Fetch DASS scores if not provided in props
+        let currentDassScores = initialScore || null;
         if (!initialScore) {
           const { data: dassData } = await supabase
             .from("dass_assessments")
@@ -82,10 +85,12 @@ export default function Recommendations({ score: initialScore, onBack }) {
             .limit(1);
 
           if (dassData && dassData.length > 0 && dassData[0].responses?.subscales) {
-            setDassScores(dassData[0].responses.subscales);
+            currentDassScores = dassData[0].responses.subscales;
+            setDassScores(currentDassScores);
           }
         }
 
+        // Fetch Feature Assessment ML results
         const { data: featureData } = await supabase
           .from("assessments")
           .select("recommendations, top_concerns, stress_level, stress_score")
@@ -147,8 +152,9 @@ export default function Recommendations({ score: initialScore, onBack }) {
         </p>
 
         {loading ? (
-          <section className="rec-empty-card">
-            <p>Loading your recommendations...</p>
+          <section className="rec-empty-card" style={{ padding: "50px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>⌛</div>
+            <p style={{ margin: 0, fontSize: "14px", color: "#7B8B86" }}>Loading your recommendations...</p>
           </section>
         ) : !hasAnyResults ? (
           <section className="rec-empty-card">
