@@ -5,7 +5,28 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 
-const COLORS = { Low: "#087c66", Moderate: "#d97706", High: "#dc2626" };
+const ML_COLORS = { Low: "#087c66", Moderate: "#d97706", High: "#dc2626" };
+
+const DASS_COLORS = {
+  Normal: "#087c66",
+  Mild: "#65a30d",
+  Moderate: "#d97706",
+  Severe: "#dc2626",
+  "Extremely Severe": "#991b1b",
+};
+
+// Helper to classify DASS Total Score into standard clinical severity bands
+function getDassCategory(score) {
+  if (score === "N/A" || score === null || score === undefined) {
+    return { label: "N/A", color: "#7b8b86", bg: "#f3f4f6" };
+  }
+  const numericScore = Number(score);
+  if (numericScore <= 14) return { label: "Normal", color: DASS_COLORS.Normal, bg: "#e8f5f0" };
+  if (numericScore <= 18) return { label: "Mild", color: DASS_COLORS.Mild, bg: "#f7fee7" };
+  if (numericScore <= 25) return { label: "Moderate", color: DASS_COLORS.Moderate, bg: "#fef3c7" };
+  if (numericScore <= 33) return { label: "Severe", color: DASS_COLORS.Severe, bg: "#fee2e2" };
+  return { label: "Extremely Severe", color: DASS_COLORS["Extremely Severe"], bg: "#fce7f3" };
+}
 
 export default function GuidanceDashboard() {
   const [search, setSearch] = useState("");
@@ -130,9 +151,9 @@ export default function GuidanceDashboard() {
       else high++;
     });
     return [
-      { name: "Low Stress", value: low, color: COLORS.Low },
-      { name: "Moderate", value: mod, color: COLORS.Moderate },
-      { name: "High Risk", value: high, color: COLORS.High }
+      { name: "Low Stress", value: low, color: ML_COLORS.Low },
+      { name: "Moderate", value: mod, color: ML_COLORS.Moderate },
+      { name: "High Risk", value: high, color: ML_COLORS.High }
     ];
   }, [students]);
 
@@ -187,11 +208,11 @@ export default function GuidanceDashboard() {
                 <span style={styles.kpiLabel}>Total Monitored</span>
                 <h2 style={styles.kpiValue}>{students.length}</h2>
               </div>
-              <div style={{...styles.kpiCard, borderBottom: `4px solid ${COLORS.High}`}}>
+              <div style={{...styles.kpiCard, borderBottom: `4px solid ${ML_COLORS.High}`}}>
                 <span style={styles.kpiLabel}>Critical / High Risk</span>
                 <h2 style={styles.kpiValue}>{stats[2].value}</h2>
               </div>
-              <div style={{...styles.kpiCard, borderBottom: `4px solid ${COLORS.Moderate}`}}>
+              <div style={{...styles.kpiCard, borderBottom: `4px solid ${ML_COLORS.Moderate}`}}>
                 <span style={styles.kpiLabel}>Moderate Stress</span>
                 <h2 style={styles.kpiValue}>{stats[1].value}</h2>
               </div>
@@ -222,9 +243,9 @@ export default function GuidanceDashboard() {
                     <YAxis allowDecimals={false} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="High" stackId="a" fill={COLORS.High} />
-                    <Bar dataKey="Moderate" stackId="a" fill={COLORS.Moderate} />
-                    <Bar dataKey="Low" stackId="a" fill={COLORS.Low} />
+                    <Bar dataKey="High" stackId="a" fill={ML_COLORS.High} />
+                    <Bar dataKey="Moderate" stackId="a" fill={ML_COLORS.Moderate} />
+                    <Bar dataKey="Low" stackId="a" fill={ML_COLORS.Low} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -240,28 +261,41 @@ export default function GuidanceDashboard() {
               onChange={(e) => setSearch(e.target.value)}
             />
             <div style={styles.studentList}>
-              {filteredStudents.map((student) => (
-                <div key={student.id} style={styles.studentItem}>
-                  <div>
-                    <strong style={{ display: "block" }}>{student.name}</strong>
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                      {student.course} • ID: {student.student_id}
-                    </span>
+              {filteredStudents.map((student) => {
+                const dassCat = getDassCategory(student.dass_total_score);
+                return (
+                  <div key={student.id} style={styles.studentItem}>
+                    <div>
+                      <strong style={{ display: "block" }}>{student.name}</strong>
+                      <span style={{ fontSize: "12px", color: "#666" }}>
+                        {student.course} • ID: {student.student_id}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      {/* DASS Severity Badge */}
+                      <span style={{
+                        ...styles.badge,
+                        backgroundColor: dassCat.bg,
+                        color: dassCat.color,
+                        border: `1px solid ${dassCat.color}40`
+                      }} title="DASS-21 Clinical Severity">
+                        DASS: {dassCat.label}
+                      </span>
+                      {/* ML Stress Badge */}
+                      <span style={{
+                        ...styles.badge, 
+                        backgroundColor: `${ML_COLORS[student.stress_level] || ML_COLORS.Low}18`, 
+                        color: ML_COLORS[student.stress_level] || ML_COLORS.Low
+                      }} title="ML Lifestyle Stress Level">
+                        ML: {student.stress_level}
+                      </span>
+                      <button style={styles.btnPrimary} onClick={() => setSelectedStudent(student)}>
+                        Review
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{
-                      ...styles.badge, 
-                      backgroundColor: `${COLORS[student.stress_level] || COLORS.Low}18`, 
-                      color: COLORS[student.stress_level] || COLORS.Low
-                    }}>
-                      {student.stress_level}
-                    </span>
-                    <button style={styles.btnPrimary} onClick={() => setSelectedStudent(student)}>
-                      Review
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {filteredStudents.length === 0 && (
                 <p style={{color: "#666", textAlign: "center", marginTop: "20px"}}>No students found.</p>
               )}
@@ -283,22 +317,54 @@ export default function GuidanceDashboard() {
             </div>
             
             <div style={{ display: "flex", gap: "25px", alignItems: "center" }}>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: "11px", color: "#666", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>
-                  Clinical DASS Score
-                </span>
-                <strong style={{ fontSize: "24px", color: "#294d46" }}>
-                  {selectedStudent.dass_total_score}
-                </strong>
-              </div>
+              {/* DASS Score Column with Dynamic Severity Colors */}
+              {(() => {
+                const dassCat = getDassCategory(selectedStudent.dass_total_score);
+                return (
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: "11px", color: "#666", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>
+                      Clinical DASS Score
+                    </span>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: "6px" }}>
+                      <strong style={{ fontSize: "28px", color: dassCat.color }}>
+                        {selectedStudent.dass_total_score}
+                      </strong>
+                      <span style={{ fontSize: "12px", color: "#666" }}>/ 42</span>
+                    </div>
+                    <span style={{
+                      display: "inline-block",
+                      marginTop: "4px",
+                      padding: "2px 8px",
+                      borderRadius: "10px",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      backgroundColor: dassCat.bg,
+                      color: dassCat.color,
+                      border: `1px solid ${dassCat.color}40`
+                    }}>
+                      {dassCat.label.toUpperCase()}
+                    </span>
+                  </div>
+                );
+              })()}
 
+              {/* ML Lifestyle Score Column */}
               <div style={{ textAlign: "right", borderLeft: "1px solid #e1ebe8", paddingLeft: "25px" }}>
                 <span style={{ fontSize: "11px", color: "#666", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>
                   ML Lifestyle Score
                 </span>
-                <strong style={{ fontSize: "28px", color: COLORS[selectedStudent.stress_level] || COLORS.Low }}>
+                <strong style={{ fontSize: "28px", color: ML_COLORS[selectedStudent.stress_level] || ML_COLORS.Low }}>
                   {selectedStudent.stress_score}/100
                 </strong>
+                <span style={{
+                  display: "block",
+                  marginTop: "4px",
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  color: ML_COLORS[selectedStudent.stress_level] || ML_COLORS.Low
+                }}>
+                  {selectedStudent.stress_level.toUpperCase()}
+                </span>
               </div>
             </div>
           </header>
@@ -315,7 +381,7 @@ export default function GuidanceDashboard() {
                   <Line 
                     type="monotone" 
                     dataKey="score" 
-                    stroke={COLORS[selectedStudent.stress_level] || COLORS.Low} 
+                    stroke={ML_COLORS[selectedStudent.stress_level] || ML_COLORS.Low} 
                     strokeWidth={3} 
                     dot={{ r: 6 }} 
                   />
@@ -336,7 +402,7 @@ export default function GuidanceDashboard() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "15px" }}>
                   {Object.entries(selectedStudent.probabilities).map(([className, prob]) => {
                     const percentage = Math.round(Number(prob) * 100);
-                    const barColor = className === "High" ? COLORS.High : className === "Moderate" ? COLORS.Moderate : COLORS.Low;
+                    const barColor = className === "High" ? ML_COLORS.High : className === "Moderate" ? ML_COLORS.Moderate : ML_COLORS.Low;
                     return (
                       <div key={className}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "14px", fontWeight: 600 }}>
@@ -387,7 +453,7 @@ const styles = {
   input: { padding: "12px", width: "calc(100% - 24px)", marginBottom: "15px", border: "1px solid #e1ebe8", borderRadius: "8px", background: "#f9fcfb" },
   studentList: { display: "flex", flexDirection: "column", gap: "10px" },
   studentItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #e1ebe8", borderRadius: "8px" },
-  badge: { padding: "4px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "bold" },
+  badge: { padding: "4px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "bold" },
   btnPrimary: { background: "#087c66", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" },
   btnSecondary: { background: "transparent", color: "#087c66", border: "1px solid #e1ebe8", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", marginBottom: "20px" },
   btnLogout: { background: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" },
