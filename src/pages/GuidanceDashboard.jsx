@@ -20,7 +20,7 @@ export default function GuidanceDashboard() {
       try {
         setLoading(true);
         
-        // 1. Fetch all assessments ordered chronologically for trajectories
+        // 1. Fetch all lifestyle assessments ordered chronologically for trajectories
         const { data: assessData, error: assessError } = await supabase
           .from('assessments')
           .select('user_id, stress_score, stress_level, probabilities, top_concerns, lifestyle_features, created_at')
@@ -35,6 +35,22 @@ export default function GuidanceDashboard() {
 
         if (profileError) console.warn("Profile fetch warning:", profileError.message);
 
+        // 3. SAFE DASS FETCH: Fetch clinical DASS-21 total scores mapped by user_id
+        const { data: dassData, error: dassError } = await supabase
+          .from('dass_assessments')
+          .select('user_id, total_score, assessment_type, created_at')
+          .order('created_at', { ascending: true });
+
+        if (dassError) console.warn("DASS fetch warning:", dassError.message);
+
+        // Map latest DASS total score by user_id
+        const dassMap = {};
+        if (dassData) {
+          dassData.forEach(d => {
+            dassMap[d.user_id] = d.total_score;
+          });
+        }
+
         // Map profiles by user id
         const profileMap = {};
         if (profileData) {
@@ -43,14 +59,14 @@ export default function GuidanceDashboard() {
           });
         }
 
-        // 3. Group assessments by user_id
+        // 4. Group lifestyle assessments by user_id
         const grouped = {};
         assessData.forEach(row => {
           if (!grouped[row.user_id]) grouped[row.user_id] = [];
           grouped[row.user_id].push(row);
         });
 
-        // 4. FORMATTED STUDENTS MAPPING (This is where raw DB rows become dashboard objects)
+        // 5. FORMATTED STUDENTS MAPPING
         const formattedStudents = Object.keys(grouped).map(userId => {
           const userHistory = grouped[userId];
           const latest = userHistory[userHistory.length - 1];
@@ -76,6 +92,7 @@ export default function GuidanceDashboard() {
             name: fullName,
             course: profile.course || "Unassigned",
             stress_score: latest.stress_score || 0,
+            dass_total_score: dassMap[userId] ?? "N/A", // Safe reference to clinical score
             stress_level: stressLevel === "Normal" ? "Low" : stressLevel,
             probabilities: latest.probabilities || null,
             top_concerns: latest.top_concerns || [],
@@ -227,7 +244,9 @@ export default function GuidanceDashboard() {
                 <div key={student.id} style={styles.studentItem}>
                   <div>
                     <strong style={{ display: "block" }}>{student.name}</strong>
-                    <span style={{ fontSize: "12px", color: "#666" }}>{student.course} • ID: {student.student_id}</span>
+                    <span style={{ fontSize: "12px", color: "#666" }}>
+                      {student.course} • ID: {student.student_id}
+                    </span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <span style={{
@@ -243,7 +262,9 @@ export default function GuidanceDashboard() {
                   </div>
                 </div>
               ))}
-              {filteredStudents.length === 0 && <p style={{color: "#666", textAlign: "center", marginTop: "20px"}}>No students found.</p>}
+              {filteredStudents.length === 0 && (
+                <p style={{color: "#666", textAlign: "center", marginTop: "20px"}}>No students found.</p>
+              )}
             </div>
           </div>
         </main>
@@ -260,11 +281,25 @@ export default function GuidanceDashboard() {
                 {selectedStudent.course} • Student ID: {selectedStudent.student_id}
               </p>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <span style={{ fontSize: "12px", color: "#666", display: "block" }}>Latest Score</span>
-              <strong style={{ fontSize: "28px", color: COLORS[selectedStudent.stress_level] || COLORS.Low }}>
-                {selectedStudent.stress_score}/100
-              </strong>
+            
+            <div style={{ display: "flex", gap: "25px", alignItems: "center" }}>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ fontSize: "11px", color: "#666", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>
+                  Clinical DASS Score
+                </span>
+                <strong style={{ fontSize: "24px", color: "#294d46" }}>
+                  {selectedStudent.dass_total_score}
+                </strong>
+              </div>
+
+              <div style={{ textAlign: "right", borderLeft: "1px solid #e1ebe8", paddingLeft: "25px" }}>
+                <span style={{ fontSize: "11px", color: "#666", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>
+                  ML Lifestyle Score
+                </span>
+                <strong style={{ fontSize: "28px", color: COLORS[selectedStudent.stress_level] || COLORS.Low }}>
+                  {selectedStudent.stress_score}/100
+                </strong>
+              </div>
             </div>
           </header>
 
