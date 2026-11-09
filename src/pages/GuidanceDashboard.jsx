@@ -49,10 +49,10 @@ export default function GuidanceDashboard() {
 
         if (assessError) throw assessError;
 
-        // 2. Fetch student profiles (first_name, last_name, course, student_id)
+        // 2. Fetch student profiles (first_name, last_name, course, student_id, email)
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, course, student_id');
+          .select('id, first_name, last_name, course, student_id, email');
 
         if (profileError) console.warn("Profile fetch warning:", profileError.message);
 
@@ -111,12 +111,14 @@ export default function GuidanceDashboard() {
             id: userId,
             student_id: profile.student_id || "N/A",
             name: fullName,
+            email: profile.email || "No email listed",
             course: profile.course || "Unassigned",
             stress_score: latest.stress_score || 0,
             dass_total_score: dassMap[userId] ?? "N/A", // Safe reference to clinical score
             stress_level: stressLevel === "Normal" ? "Low" : stressLevel,
             probabilities: latest.probabilities || null,
             top_concerns: latest.top_concerns || [],
+            created_at: latest.created_at,
             history
           };
         });
@@ -140,8 +142,19 @@ export default function GuidanceDashboard() {
 
   const filteredStudents = students.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase()) || 
-    s.course.toLowerCase().includes(search.toLowerCase())
+    s.course.toLowerCase().includes(search.toLowerCase()) ||
+    s.student_id.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Filter top critical risk students (High ML Risk OR Severe/Ex-Severe DASS)
+  const criticalStudents = useMemo(() => {
+    return students.filter(s => {
+      const dassCat = getDassCategory(s.dass_total_score);
+      const isHighMl = s.stress_level === "High" || s.stress_score >= 66;
+      const isHighDass = dassCat.label === "Severe" || dassCat.label === "Extremely Severe";
+      return isHighMl || isHighDass;
+    }).sort((a, b) => b.stress_score - a.stress_score);
+  }, [students]);
 
   const stats = useMemo(() => {
     let low = 0, mod = 0, high = 0;
@@ -203,6 +216,7 @@ export default function GuidanceDashboard() {
       {!selectedStudent ? (
         <main style={styles.mainGrid}>
           <div style={styles.analyticsCol}>
+            {/* KPI STAT CARDS */}
             <div style={styles.kpiGrid}>
               <div style={styles.kpiCard}>
                 <span style={styles.kpiLabel}>Total Monitored</span>
@@ -218,12 +232,13 @@ export default function GuidanceDashboard() {
               </div>
             </div>
 
+            {/* ANALYTICS CHARTS */}
             <div style={styles.chartGrid}>
               <div style={styles.chartCard}>
                 <h3>Campus Distribution</h3>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={230}>
                   <PieChart>
-                    <Pie data={stats} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    <Pie data={stats} innerRadius={55} outerRadius={75} paddingAngle={5} dataKey="value">
                       {stats.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
@@ -236,7 +251,7 @@ export default function GuidanceDashboard() {
 
               <div style={styles.chartCard}>
                 <h3>Stress by Program</h3>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={230}>
                   <BarChart data={courseStats}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" />
@@ -250,13 +265,118 @@ export default function GuidanceDashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            {/* CRITICAL RISK PRIORITY TABLE */}
+            <div style={styles.tableCard}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                <div>
+                  <h3 style={{ margin: 0, color: "#991b1b", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span>🚨</span> Recent Critical Risk Students Priority List
+                  </h3>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#666" }}>
+                    Students requiring urgent outreach based on high ML lifestyle predictions or severe DASS scores.
+                  </p>
+                </div>
+                <span style={{ fontSize: "12px", fontWeight: "bold", background: "#fee2e2", color: "#dc2626", padding: "4px 10px", borderRadius: "12px" }}>
+                  {criticalStudents.length} Flagged Case{criticalStudents.length === 1 ? "" : "s"}
+                </span>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr style={styles.tableHeaderRow}>
+                      <th style={styles.th}>Student No.</th>
+                      <th style={styles.th}>Name</th>
+                      <th style={styles.th}>Email</th>
+                      <th style={styles.th}>Clinical DASS Score</th>
+                      <th style={styles.th}>ML Feature Assessment Score</th>
+                      <th style={styles.th}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {criticalStudents.map((student) => {
+                      const dassCat = getDassCategory(student.dass_total_score);
+                      return (
+                        <tr key={student.id} style={styles.tableBodyRow}>
+                          <td style={styles.td}>
+                            <strong>{student.student_id}</strong>
+                          </td>
+                          <td style={styles.td}>
+                            <div>
+                              <strong style={{ display: "block", color: "#123F35" }}>{student.name}</strong>
+                              <span style={{ fontSize: "11px", color: "#7b8b86" }}>{student.course}</span>
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ fontSize: "12px", color: "#4b5563" }}>{student.email}</span>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <strong style={{ fontSize: "14px", color: dassCat.color }}>
+                                {student.dass_total_score} <span style={{ fontSize: "11px", color: "#7b8b86" }}>/ 42</span>
+                              </strong>
+                              <span style={{
+                                fontSize: "10px",
+                                fontWeight: "bold",
+                                padding: "2px 8px",
+                                borderRadius: "10px",
+                                backgroundColor: dassCat.bg,
+                                color: dassCat.color,
+                                border: `1px solid ${dassCat.color}40`
+                              }}>
+                                {dassCat.label}
+                              </span>
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <strong style={{ fontSize: "14px", color: ML_COLORS[student.stress_level] || ML_COLORS.High }}>
+                                {student.stress_score} <span style={{ fontSize: "11px", color: "#7b8b86" }}>/ 100</span>
+                              </strong>
+                              <span style={{
+                                fontSize: "10px",
+                                fontWeight: "bold",
+                                padding: "2px 8px",
+                                borderRadius: "10px",
+                                backgroundColor: `${ML_COLORS[student.stress_level] || ML_COLORS.High}18`,
+                                color: ML_COLORS[student.stress_level] || ML_COLORS.High,
+                                border: `1px solid ${ML_COLORS[student.stress_level] || ML_COLORS.High}40`
+                              }}>
+                                {student.stress_level}
+                              </span>
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <button
+                              style={styles.btnDanger}
+                              onClick={() => setSelectedStudent(student)}
+                            >
+                              Review Case →
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {criticalStudents.length === 0 && (
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: "center", padding: "20px", color: "#087c66", fontWeight: "bold" }}>
+                          ✓ No critical high-risk cases currently detected across campus.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
+          {/* STUDENT ROSTER SIDEBAR */}
           <div style={styles.rosterCard}>
             <h3>Student Roster</h3>
             <input
               style={styles.input}
-              placeholder="Search student name or course..."
+              placeholder="Search by name, ID, or course..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -267,11 +387,11 @@ export default function GuidanceDashboard() {
                   <div key={student.id} style={styles.studentItem}>
                     <div>
                       <strong style={{ display: "block" }}>{student.name}</strong>
-                      <span style={{ fontSize: "12px", color: "#666" }}>
+                      <span style={{ fontSize: "11px", color: "#666" }}>
                         {student.course} • ID: {student.student_id}
                       </span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       {/* DASS Severity Badge */}
                       <span style={{
                         ...styles.badge,
@@ -303,6 +423,7 @@ export default function GuidanceDashboard() {
           </div>
         </main>
       ) : (
+        /* INDIVIDUAL STUDENT PROFILE REVIEW VIEW */
         <main style={styles.profileView}>
           <button style={styles.btnSecondary} onClick={() => setSelectedStudent(null)}>
             ← Back to Dashboard
@@ -312,7 +433,7 @@ export default function GuidanceDashboard() {
             <div>
               <h2 style={{ margin: 0 }}>{selectedStudent.name}</h2>
               <p style={{ margin: "5px 0 0 0", color: "#666" }}>
-                {selectedStudent.course} • Student ID: {selectedStudent.student_id}
+                {selectedStudent.course} • Student ID: {selectedStudent.student_id} • Email: {selectedStudent.email}
               </p>
             </div>
             
@@ -441,7 +562,7 @@ export default function GuidanceDashboard() {
 const styles = {
   page: { background: "#f4f9f7", minHeight: "100vh", color: "#294d46", fontFamily: '"Segoe UI", sans-serif' },
   header: { padding: "20px 40px", background: "#fff", borderBottom: "1px solid #e1ebe8" },
-  mainGrid: { display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px", padding: "20px 40px" },
+  mainGrid: { display: "grid", gridTemplateColumns: "2.3fr 1fr", gap: "20px", padding: "20px 40px" },
   analyticsCol: { display: "flex", flexDirection: "column", gap: "20px" },
   kpiGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" },
   kpiCard: { background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" },
@@ -449,12 +570,19 @@ const styles = {
   kpiValue: { fontSize: "36px", margin: "10px 0 0 0" },
   chartGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" },
   chartCard: { background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" },
+  tableCard: { background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" },
+  table: { width: "100%", borderCollapse: "collapse", textAlign: "left" },
+  tableHeaderRow: { background: "#f8faf9", borderBottom: "2px solid #e1ebe8" },
+  th: { padding: "12px 14px", fontSize: "12px", color: "#4a5568", textTransform: "uppercase", fontWeight: "700" },
+  tableBodyRow: { borderBottom: "1px solid #edf2f7" },
+  td: { padding: "12px 14px", verticalAlign: "middle" },
   rosterCard: { background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", height: "calc(100vh - 120px)", overflowY: "auto" },
   input: { padding: "12px", width: "calc(100% - 24px)", marginBottom: "15px", border: "1px solid #e1ebe8", borderRadius: "8px", background: "#f9fcfb" },
   studentList: { display: "flex", flexDirection: "column", gap: "10px" },
   studentItem: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #e1ebe8", borderRadius: "8px" },
-  badge: { padding: "4px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "bold" },
+  badge: { padding: "3px 8px", borderRadius: "14px", fontSize: "10px", fontWeight: "bold" },
   btnPrimary: { background: "#087c66", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" },
+  btnDanger: { background: "#dc2626", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "12px" },
   btnSecondary: { background: "transparent", color: "#087c66", border: "1px solid #e1ebe8", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", marginBottom: "20px" },
   btnLogout: { background: "#dc2626", color: "#fff", border: "none", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" },
   profileView: { padding: "20px 40px", maxWidth: "1200px", margin: "0 auto" },
